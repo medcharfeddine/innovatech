@@ -10,4 +10,6 @@ node_modules
 dist
 build
 uploads
-public/uploads
+# Keep uploads directory but ignore uploaded files
+/public/uploads/*
+!/public/uploads/.gitkeep

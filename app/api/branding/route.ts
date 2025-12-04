@@ -4,6 +4,10 @@ import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
+// NOTE: File uploads persist locally but not on serverless platforms like Vercel
+// For production, consider using cloud storage (AWS S3, Cloudinary, etc.)
+// Current implementation stores branding data in public/branding.json
+
 const BRANDING_FILE = join(process.cwd(), 'public', 'branding.json');
 
 // Default branding data

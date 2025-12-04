@@ -104,7 +104,13 @@ const Header = () => {
                   alt={branding.siteName}
                   className={styles.logoImage}
                   onError={(e) => {
+                    console.error('Logo failed to load:', branding.logoUrl);
                     e.currentTarget.style.display = 'none';
+                    // Show fallback text
+                    const fallback = document.createElement('span');
+                    fallback.className = styles.brand;
+                    fallback.textContent = branding.siteName;
+                    e.currentTarget.parentElement?.appendChild(fallback);
                   }}
                 />
               ) : (
