@@ -61,7 +61,7 @@ export default function RegisterPage() {
 
         if (loginResponse.ok) {
           const loginData = await loginResponse.json();
-          login(loginData.token, loginData.user.role || 'customer', loginData.user._id);
+          login(loginData.token, loginData.user.role || 'customer', loginData.user._id, loginData.user);
           router.push('/');
         }
       } else {

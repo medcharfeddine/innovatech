@@ -35,7 +35,7 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        login(data.token, data.user.role || 'customer', data.user._id);
+        login(data.token, data.user.role || 'customer', data.user._id, data.user);
         push('Login successful!', { type: 'success' });
         router.push('/');
       } else {

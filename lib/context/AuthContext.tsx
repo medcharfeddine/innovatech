@@ -7,7 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   userRole: 'user' | 'admin' | null;
   userId: string | null;
-  login: (token: string, role: string, userId: string) => void;
+  login: (token: string, role: string, userId: string, user?: any) => void;
   logout: () => void;
 }
 
@@ -31,10 +31,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = useCallback((token: string, role: string, userId: string) => {
+  const login = useCallback((token: string, role: string, userId: string, user?: any) => {
     localStorage.setItem('token', token);
     localStorage.setItem('userRole', role);
     localStorage.setItem('userId', userId);
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
     setIsAuthenticated(true);
     setUserRole(role as 'user' | 'admin');
     setUserId(userId);
@@ -44,6 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
+    localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUserRole(null);
     setUserId(null);
