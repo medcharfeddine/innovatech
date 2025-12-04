@@ -14,6 +14,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if running on Vercel
+    const isVercel = !!process.env.VERCEL_URL || process.env.NODE_ENV === 'production';
+    
+    if (isVercel) {
+      return NextResponse.json(
+        { 
+          error: 'File uploads are not supported on Vercel due to ephemeral filesystem. Please configure cloud storage (AWS S3, Cloudinary, or Supabase). See VERCEL_DEPLOYMENT_GUIDE.md for setup instructions.',
+          helpUrl: 'https://github.com/medcharfeddine/innovatech#vercel-deployment'
+        },
+        { status: 501 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;
@@ -34,11 +47,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 10MB)
+    // Validate file size (max 50MB)
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: `File size must be less than 10MB (current: ${(file.size / 1024 / 1024).toFixed(2)}MB)` },
+        { error: `File size must be less than 50MB (current: ${(file.size / 1024 / 1024).toFixed(2)}MB)` },
         { status: 400 }
       );
     }
@@ -59,19 +72,16 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     await writeFile(filepath, Buffer.from(bytes));
 
-    // Return public URL with full domain on Vercel
+    // Return public URL with full domain
     let url = `/uploads/${filename}`;
     
-    // Get full URL for Vercel deployment
+    // Get full URL for deployment
     const protocol = request.headers.get('x-forwarded-proto') || 'https';
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
     
     if (host && host !== 'localhost:3000') {
-      // On Vercel or production
+      // On production (but not Vercel)
       url = `${protocol}://${host}/uploads/${filename}`;
-    } else if (process.env.VERCEL_URL) {
-      // Vercel environment variable
-      url = `https://${process.env.VERCEL_URL}/uploads/${filename}`;
     }
 
     return NextResponse.json(

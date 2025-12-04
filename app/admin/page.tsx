@@ -479,7 +479,19 @@ export default function AdminPage() {
         }
       } else {
         const error = await response.json();
-        alert(`Upload failed: ${error.error}`);
+        if (error.error?.includes('cloud storage') || response.status === 501) {
+          alert(
+            'File uploads require cloud storage setup on Vercel.\n\n' +
+            'Setup Instructions:\n' +
+            '1. Choose: Cloudinary (easiest), AWS S3, or Supabase\n' +
+            '2. Follow VERCEL_DEPLOYMENT_GUIDE.md\n' +
+            '3. Update .env with credentials\n' +
+            '4. Redeploy\n\n' +
+            'Local development: Works fine without cloud storage.'
+          );
+        } else {
+          alert(`Upload failed: ${error.error}`);
+        }
       }
     } catch (error) {
       console.error('Error uploading logo:', error);
