@@ -1,0 +1,364 @@
+.banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 50px 20px;
+  margin: 30px 0;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.banner::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -5%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  color: white;
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 35px 0;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  letter-spacing: -0.5px;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  position: relative;
+}
+
+.categoryCard {
+  position: relative;
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border: 2px solid transparent;
+}
+
+.categoryCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.25);
+  border-color: #667eea;
+}
+
+.categoryCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+.categoryCard:hover::before {
+  transform: scaleX(1);
+}
+
+.categoryLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: #333;
+  transition: color 0.3s ease;
+  position: relative;
+  z-index: 2;
+  padding: 20px;
+}
+
+.categoryImage {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  border-radius: 10px;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  background: #f5f7ff;
+  padding: 8px;
+}
+
+.categoryCard:hover .categoryImage {
+  transform: scale(1.08);
+  filter: brightness(1.1);
+}
+
+.categoryName {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  padding: 0 8px;
+  color: #2a3147;
+  transition: color 0.3s ease;
+  letter-spacing: -0.3px;
+}
+
+.categoryCard:hover .categoryName {
+  color: #667eea;
+}
+
+.indicator {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 3;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.categoryCard:hover .indicator {
+  opacity: 1;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}
+
+.dropdown.expanded {
+  max-height: 450px;
+  opacity: 1;
+}
+
+.dropdownContent {
+  padding: 16px 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  text-decoration: none;
+  color: #2a3147;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+  position: relative;
+}
+
+.dropdownItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.dropdownItem:hover {
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), transparent);
+  color: #667eea;
+  padding-left: 22px;
+}
+
+.dropdownItem:hover::before {
+  transform: scaleY(1);
+}
+
+.dropdownIcon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #f5f7ff;
+  padding: 2px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .banner {
+    padding: 35px 15px;
+    margin: 20px 0;
+  }
+
+  .title {
+    font-size: 26px;
+    margin-bottom: 25px;
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  .categoryCard {
+    height: 180px;
+  }
+
+  .categoryImage {
+    width: 70px;
+    height: 70px;
+  }
+
+  .categoryName {
+    font-size: 13px;
+  }
+
+  .dropdown {
+    position: static;
+    max-height: none;
+    opacity: 1;
+    background: #f8f9ff;
+    margin-top: 12px;
+    border-radius: 10px;
+    border: 1px solid #e8e9ff;
+    box-shadow: none;
+  }
+
+  .dropdownContent {
+    max-height: none;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .dropdownItem {
+    flex-direction: column;
+    text-align: center;
+    padding: 10px;
+    border-left: none;
+    border-top: 3px solid transparent;
+    justify-content: center;
+  }
+
+  .dropdownItem:hover {
+    border-left: none;
+    border-top-color: #667eea;
+    padding-top: 13px;
+    padding-left: 10px;
+  }
+
+  .dropdownItem::before {
+    display: none;
+  }
+
+  .indicator {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner {
+    padding: 25px 12px;
+    margin: 15px 0;
+  }
+
+  .title {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .categoryCard {
+    height: 160px;
+  }
+
+  .categoryImage {
+    width: 60px;
+    height: 60px;
+  }
+
+  .categoryName {
+    font-size: 12px;
+  }
+
+  .dropdownContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Scrollbar styling for dropdown */
+.dropdownContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdownContent::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.dropdownContent::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.dropdownContent::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}

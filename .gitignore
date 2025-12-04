@@ -1,0 +1,13 @@
+.env.local
+.env
+.env.local.example
+.next
+node_modules
+*.log
+.DS_Store
+.idea
+.vscode
+dist
+build
+uploads
+public/uploads
