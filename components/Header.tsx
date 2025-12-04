@@ -103,6 +103,7 @@ const Header = () => {
                   src={branding.logoUrl} 
                   alt={branding.siteName}
                   className={styles.logoImage}
+                  loading="lazy"
                   onError={(e) => {
                     console.error('Logo failed to load:', branding.logoUrl);
                     e.currentTarget.style.display = 'none';
