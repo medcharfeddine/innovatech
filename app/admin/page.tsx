@@ -580,12 +580,24 @@ export default function AdminPage() {
       if (response.ok) {
         const result = await response.json();
         
-        if (editingBannerId) {
-          // Update existing banner in list
-          setBanners(banners.map(b => b._id === editingBannerId ? result : b));
-        } else {
-          // Add new banner to list
-          setBanners([...banners, result]);
+        // Refetch banners to ensure consistency
+        try {
+          const token = localStorage.getItem('token');
+          const refreshRes = await fetch('/api/banners', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (refreshRes.ok) {
+            const refreshedData = await refreshRes.json();
+            setBanners(Array.isArray(refreshedData) ? refreshedData : refreshedData.banners || []);
+          }
+        } catch (err) {
+          console.warn('Failed to refetch banners, using local update:', err);
+          // Fallback to local state update
+          if (editingBannerId) {
+            setBanners(banners.map(b => b._id === editingBannerId ? result : b));
+          } else {
+            setBanners([...banners, result]);
+          }
         }
 
         // Reset form
@@ -601,7 +613,7 @@ export default function AdminPage() {
         setBannerImageFile(null);
         setEditingBannerId(null);
         setBannerModalOpen(false);
-        alert(editingBannerId ? 'Banner updated successfully!' : 'Banner created successfully!');
+        alert(editingBannerId ? 'Banner updated successfully! It will appear on the frontend within 10 seconds.' : 'Banner created successfully! It will appear on the frontend within 10 seconds.');
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMsg = errorData.error || `Error: ${response.statusText}`;
@@ -894,12 +906,24 @@ export default function AdminPage() {
         const result = await response.json();
         console.log('Product saved successfully:', result);
         
-        if (editingProductId) {
-          // Update existing product in list
-          setProducts(products.map(p => p._id === editingProductId ? result : p));
-        } else {
-          // Add new product to list
-          setProducts([...products, result]);
+        // Refetch products to ensure frontend stays in sync
+        try {
+          const token = localStorage.getItem('token');
+          const refreshRes = await fetch('/api/products?adminView=true', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (refreshRes.ok) {
+            const refreshedData = await refreshRes.json();
+            setProducts(Array.isArray(refreshedData) ? refreshedData : refreshedData.products || []);
+          }
+        } catch (err) {
+          console.warn('Failed to refetch products, using local update:', err);
+          // Fallback to local state update
+          if (editingProductId) {
+            setProducts(products.map(p => p._id === editingProductId ? result : p));
+          } else {
+            setProducts([...products, result]);
+          }
         }
 
         // Reset form
@@ -916,7 +940,7 @@ export default function AdminPage() {
         setProductImageFile(null);
         setEditingProductId(null);
         setProductModalOpen(false);
-        alert(editingProductId ? 'Product updated successfully!' : 'Product created successfully!');
+        alert(editingProductId ? 'Product updated successfully! It will appear on the frontend within 10 seconds.' : 'Product created successfully! It will appear on the frontend within 10 seconds.');
       } else {
         const error = await response.json();
         alert(`Failed to save product: ${error.error}`);
@@ -989,12 +1013,24 @@ export default function AdminPage() {
       if (response.ok) {
         const result = await response.json();
         
-        if (editingCategoryId) {
-          // Update existing category in list
-          setCategories(categories.map(c => c._id === editingCategoryId ? result : c));
-        } else {
-          // Add new category to list
-          setCategories([...categories, result]);
+        // Refetch categories to ensure consistency
+        try {
+          const token = localStorage.getItem('token');
+          const refreshRes = await fetch('/api/categories/all', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (refreshRes.ok) {
+            const refreshedData = await refreshRes.json();
+            setCategories(Array.isArray(refreshedData) ? refreshedData : refreshedData.categories || []);
+          }
+        } catch (err) {
+          console.warn('Failed to refetch categories, using local update:', err);
+          // Fallback to local state update
+          if (editingCategoryId) {
+            setCategories(categories.map(c => c._id === editingCategoryId ? result : c));
+          } else {
+            setCategories([...categories, result]);
+          }
         }
 
         // Reset form
