@@ -9,7 +9,7 @@ node_modules
 .vscode
 dist
 build
-uploads
+# uploads
 # Keep uploads directory but ignore uploaded files
-/public/uploads/*
+# /public/uploads/*
 !/public/uploads/.gitkeep
