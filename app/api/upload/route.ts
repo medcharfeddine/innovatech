@@ -59,8 +59,20 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     await writeFile(filepath, Buffer.from(bytes));
 
-    // Return public URL
-    const url = `/uploads/${filename}`;
+    // Return public URL with full domain on Vercel
+    let url = `/uploads/${filename}`;
+    
+    // Get full URL for Vercel deployment
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    
+    if (host && host !== 'localhost:3000') {
+      // On Vercel or production
+      url = `${protocol}://${host}/uploads/${filename}`;
+    } else if (process.env.VERCEL_URL) {
+      // Vercel environment variable
+      url = `https://${process.env.VERCEL_URL}/uploads/${filename}`;
+    }
 
     return NextResponse.json(
       { url, filename },
