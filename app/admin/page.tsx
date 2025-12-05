@@ -499,6 +499,89 @@ export default function AdminPage() {
     }
   };
 
+  const handleFaviconUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (favicon should be specific formats)
+    const validTypes = ['image/x-icon', 'image/vnd.microsoft.icon', 'image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Favicon should be: ICO, PNG, JPEG, GIF, or WebP format');
+      return;
+    }
+
+    // Validate file size (max 2MB for favicon)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Favicon size must be less than 2MB');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'favicon');
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update branding with new favicon URL
+        const updatedBranding = { ...branding, faviconUrl: data.url };
+        setBranding(updatedBranding);
+        
+        // Auto-save branding with the new favicon URL
+        try {
+          const saveResponse = await fetch('/api/branding', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(updatedBranding),
+          });
+
+          if (saveResponse.ok) {
+            const savedData = await saveResponse.json();
+            setBranding(savedData);
+            alert('Favicon uploaded and saved successfully!');
+          } else {
+            alert('Favicon uploaded but saving failed. Click Save Changes to persist.');
+          }
+        } catch (saveError) {
+          console.error('Error auto-saving branding:', saveError);
+          alert('Favicon uploaded but saving failed. Click Save Changes to persist.');
+        }
+      } else {
+        const error = await response.json();
+        if (error.error?.includes('cloud storage') || response.status === 501) {
+          alert(
+            'File uploads require cloud storage setup on Vercel.\n\n' +
+            'Setup Instructions:\n' +
+            '1. Choose: Cloudinary (easiest), AWS S3, or Supabase\n' +
+            '2. Follow VERCEL_DEPLOYMENT_GUIDE.md\n' +
+            '3. Update .env with credentials\n' +
+            '4. Redeploy\n\n' +
+            'Local development: Works fine without cloud storage.'
+          );
+        } else {
+          alert(`Upload failed: ${error.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading favicon:', error);
+      alert('Failed to upload favicon');
+    }
+  };
+
+
   const removeLogo = () => {
     if (confirm('Are you sure you want to remove the logo?')) {
       setBranding({ ...branding, logoUrl: '' });
@@ -1271,7 +1354,7 @@ export default function AdminPage() {
                       <tr key={product._id}>
                         <td className={styles.productName}>{product.name}</td>
                         <td>{product.category}</td>
-                        <td>${product.price}</td>
+                        <td>د.ت {product.price}</td>
                         <td>{product.stock || 0}</td>
                         <td>
                           <button className={styles.editBtn} onClick={() => handleEditProduct(product)}>Edit</button>
@@ -1518,6 +1601,34 @@ export default function AdminPage() {
                             type="button"
                             className={styles.removeLogo}
                             onClick={() => removeLogo()}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Favicon Upload (Browser Tab Icon)</label>
+                    <div className={styles.fileInputWrapper}>
+                      <input 
+                        type="file" 
+                        id="faviconInput"
+                        accept=".ico,.png,.jpg,.jpeg,.gif,.webp"
+                        className={styles.fileInput}
+                        onChange={(e) => handleFaviconUpload(e)}
+                      />
+                      <label htmlFor="faviconInput" className={styles.fileInputLabel}>
+                        Click to upload favicon (ICO, PNG, JPEG, GIF, or WebP)
+                      </label>
+                      {branding?.faviconUrl && (
+                        <div className={styles.faviconPreview}>
+                          <img src={branding.faviconUrl} alt="Favicon Preview" />
+                          <button 
+                            type="button"
+                            className={styles.removeLogo}
+                            onClick={() => setBranding({ ...branding, faviconUrl: '' })}
                           >
                             Remove
                           </button>
@@ -2024,8 +2135,8 @@ export default function AdminPage() {
                         <tr key={idx}>
                           <td>{item.product?.name || item.productId || 'Unknown Product'}</td>
                           <td style={{ textAlign: 'center' }}>{item.quantity || 0}</td>
-                          <td style={{ textAlign: 'right' }}>${(item.price || 0).toFixed(2)}</td>
-                          <td style={{ textAlign: 'right', fontWeight: '600' }}>${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</td>
+                          <td style={{ textAlign: 'right' }}>د.ت {(item.price || 0).toFixed(2)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: '600' }}>د.ت {((item.price || 0) * (item.quantity || 0)).toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>

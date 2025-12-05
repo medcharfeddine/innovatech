@@ -129,14 +129,14 @@ export default function OrderConfirmationPage() {
                 <tr key={idx}>
                   <td>{item.name || item.product?.name || 'Product'}</td>
                   <td>{item.quantity}</td>
-                  <td>${(item.price || 0).toFixed(2)}</td>
-                  <td>${((item.price || 0) * item.quantity).toFixed(2)}</td>
+                  <td>د.ت {(item.price || 0).toFixed(2)}</td>
+                  <td>د.ت {((item.price || 0) * item.quantity).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div className={styles.total}>
-            <p>Total: <strong>${(order.total || order.totalAmount || 0).toFixed(2)}</strong></p>
+            <p>Total: <strong>د.ت {(order.total || order.totalAmount || 0).toFixed(2)}</strong></p>
           </div>
         </section>
 

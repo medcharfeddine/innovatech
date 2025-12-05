@@ -159,7 +159,7 @@ const AdminProductFeaturing: React.FC = () => {
             filteredProducts.map(product => (
               <div key={product._id} className={styles.tableRow}>
                 <div className={styles.col1}>{product.name}</div>
-                <div className={styles.col2}>${product.price.toFixed(2)}</div>
+                <div className={styles.col2}>د.ت {product.price.toFixed(2)}</div>
                 <div className={styles.col3}>
                   <span className={styles.rating}>⭐ {product.rating ? product.rating.toFixed(1) : '0.0'}</span>
                 </div>

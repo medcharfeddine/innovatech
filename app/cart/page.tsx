@@ -51,7 +51,7 @@ export default function CartPage() {
               
               <div className={styles.itemDetails}>
                 <h3>{item.name}</h3>
-                <p className={styles.price}>${item.price.toFixed(2)}</p>
+                <p className={styles.price}>د.ت {item.price.toFixed(2)}</p>
               </div>
 
               <div className={styles.itemQty}>
@@ -70,7 +70,7 @@ export default function CartPage() {
               </div>
 
               <div className={styles.itemTotal}>
-                ${(item.price * item.quantity).toFixed(2)}
+                د.ت {(item.price * item.quantity).toFixed(2)}
               </div>
 
               <button
@@ -87,7 +87,7 @@ export default function CartPage() {
           <h2>Order Summary</h2>
           <div className={styles.summaryRow}>
             <span>Subtotal:</span>
-            <span>${getTotalPrice().toFixed(2)}</span>
+            <span>د.ت {getTotalPrice().toFixed(2)}</span>
           </div>
           <div className={styles.summaryRow}>
             <span>Shipping:</span>
@@ -95,12 +95,12 @@ export default function CartPage() {
           </div>
           <div className={styles.summaryRow}>
             <span>Tax:</span>
-            <span>${(getTotalPrice() * 0.1).toFixed(2)}</span>
+            <span>د.ت {(getTotalPrice() * 0.1).toFixed(2)}</span>
           </div>
           <div className={styles.divider}></div>
           <div className={styles.summaryRow + ' ' + styles.total}>
             <span>Total:</span>
-            <span>${(getTotalPrice() * 1.1).toFixed(2)}</span>
+            <span>د.ت {(getTotalPrice() * 1.1).toFixed(2)}</span>
           </div>
 
           <button

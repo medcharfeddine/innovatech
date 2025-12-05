@@ -104,7 +104,7 @@ export default function ProductDetailPage() {
           )}
 
           <div className={styles.priceSection}>
-            <h2 className={styles.price}>${product.price.toFixed(2)}</h2>
+            <h2 className={styles.price}>د.ت {product.price.toFixed(2)}</h2>
             <p className={isOutOfStock ? styles.outOfStock : styles.inStock}>
               {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
             </p>

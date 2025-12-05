@@ -213,7 +213,7 @@ export default function CheckoutPage() {
             {cart.map(item => (
               <div key={item._id} className={styles.item}>
                 <span>{item.name} x {item.quantity}</span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <span>د.ت {(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -221,15 +221,15 @@ export default function CheckoutPage() {
           <div className={styles.summary}>
             <div className={styles.row}>
               <span>Subtotal:</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>د.ت {subtotal.toFixed(2)}</span>
             </div>
             <div className={styles.row}>
               <span>Tax (10%):</span>
-              <span>${tax.toFixed(2)}</span>
+              <span>د.ت {tax.toFixed(2)}</span>
             </div>
             <div className={styles.row + ' ' + styles.total}>
               <span>Total:</span>
-              <span>${total.toFixed(2)}</span>
+              <span>د.ت {total.toFixed(2)}</span>
             </div>
           </div>
         </div>

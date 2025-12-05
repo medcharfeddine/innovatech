@@ -829,6 +829,27 @@
   object-fit: contain;
 }
 
+.faviconPreview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.faviconPreview img {
+  max-height: 64px;
+  max-width: 64px;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
 .removeLogo {
   padding: 0.5rem 1rem;
   background-color: #dc3545;

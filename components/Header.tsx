@@ -31,6 +31,17 @@ const Header = () => {
           const data = await response.json();
           setBranding(data);
           document.title = data.siteName || 'Nova';
+          
+          // Set favicon if available
+          if (data.faviconUrl) {
+            let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+            if (!favicon) {
+              favicon = document.createElement('link');
+              favicon.rel = 'icon';
+              document.head.appendChild(favicon);
+            }
+            favicon.href = data.faviconUrl;
+          }
         }
       } catch (error) {
         console.error('Error fetching branding:', error);

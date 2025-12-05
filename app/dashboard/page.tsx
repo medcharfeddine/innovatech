@@ -152,7 +152,7 @@ export default function Dashboard() {
                       <td>#{order._id.toString().slice(-12)}</td>
                       <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td>{order.products?.length || 0} item(s)</td>
-                      <td>${(order.totalAmount || 0).toFixed(2)}</td>
+                      <td>د.ت {(order.totalAmount || 0).toFixed(2)}</td>
                       <td>
                         <span className={`${styles.status} ${styles[order.status]}`}>
                           {order.status}
@@ -198,7 +198,7 @@ export default function Dashboard() {
                       <p><strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <p><strong>Total:</strong> <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1f2937' }}>${(selectedOrder.totalAmount || 0).toFixed(2)}</span></p>
+                      <p><strong>Total:</strong> <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1f2937' }}>د.ت {(selectedOrder.totalAmount || 0).toFixed(2)}</span></p>
                     </div>
                   </div>
                 </div>
@@ -221,8 +221,8 @@ export default function Dashboard() {
                           <tr key={idx}>
                             <td>{item.product?.name || 'Product'}</td>
                             <td>{item.quantity}</td>
-                            <td>${(item.price || 0).toFixed(2)}</td>
-                            <td>${((item.price || 0) * (item.quantity || 0)).toFixed(2)}</td>
+                            <td>د.ت {(item.price || 0).toFixed(2)}</td>
+                            <td>د.ت {((item.price || 0) * (item.quantity || 0)).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
