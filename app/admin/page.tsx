@@ -1723,6 +1723,26 @@ export default function AdminPage() {
                     />
                   </div>
                   <div className={styles.formGroup}>
+                    <label>Page Title (Browser Tab)</label>
+                    <input 
+                      type="text" 
+                      value={branding.pageTitle || 'Nova - E-commerce Platform'}
+                      onChange={(e) => handleBrandingInputChange('pageTitle', e.target.value)}
+                      placeholder="Enter page title for browser tab"
+                    />
+                    <small>This appears in the browser tab title</small>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Page Description (Search Results)</label>
+                    <textarea 
+                      value={branding.pageDescription || 'Premium e-commerce platform for shopping'}
+                      onChange={(e) => handleBrandingInputChange('pageDescription', e.target.value)}
+                      placeholder="Enter page description for search results"
+                      rows={3}
+                    />
+                    <small>This appears in search results and social media previews</small>
+                  </div>
+                  <div className={styles.formGroup}>
                     <label>Primary Color</label>
                     <input 
                       type="color" 

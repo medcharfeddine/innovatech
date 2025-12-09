@@ -1,13 +1,40 @@
+'use client';
+
 import Link from 'next/link';
 import styles from './Footer.module.css';
+import { useState, useEffect } from 'react';
 
 export default function Footer() {
+  const [branding, setBranding] = useState<any>({ logoUrl: '', siteName: 'Nova' });
+
+  useEffect(() => {
+    const fetchBranding = async () => {
+      try {
+        const response = await fetch('/api/branding', { next: { revalidate: 3600 } });
+        if (response.ok) {
+          const data = await response.json();
+          setBranding(data);
+        }
+      } catch (error) {
+        // Silently fail
+      }
+    };
+
+    fetchBranding();
+  }, []);
+
   return (
     <footer className={styles.footer}>
       <div className={styles.container}>
         <div className={styles.content}>
           <div className={styles.section}>
-            <h3 className={styles.title}>Nova</h3>
+            <div className={styles.logoSection}>
+              {branding.logoUrl ? (
+                <img src={branding.logoUrl} alt="Logo" className={styles.logoImage} />
+              ) : (
+                <h3 className={styles.title}>{branding.siteName || 'Nova'}</h3>
+              )}
+            </div>
             <p className={styles.description}>Premium e-commerce platform for all your needs</p>
           </div>
 
@@ -43,7 +70,7 @@ export default function Footer() {
         </div>
 
         <div className={styles.bottom}>
-          <p>&copy; 2025 Nova E-commerce. All rights reserved.</p>
+          <p>&copy; 2025 {branding.siteName || 'Nova'} E-commerce. All rights reserved.</p>
           <div className={styles.social}>
             <a href="#" title="Facebook">f</a>
             <a href="#" title="Twitter">𝕏</a>

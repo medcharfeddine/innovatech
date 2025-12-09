@@ -15,6 +15,8 @@ const DEFAULT_BRANDING = {
   _id: '1',
   siteName: 'Nova',
   storeName: 'Nova Store',
+  pageTitle: 'Nova - E-commerce Platform',
+  pageDescription: 'Premium e-commerce platform for shopping',
   logoUrl: '',
   faviconUrl: '/favicon.ico',
   primaryColor: '#2a317f',

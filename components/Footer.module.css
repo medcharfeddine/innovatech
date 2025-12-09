@@ -35,6 +35,19 @@
   color: var(--primary-color, #2a317f);
 }
 
+.logoSection {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.logoImage {
+  height: 50px;
+  max-width: 200px;
+  object-fit: contain;
+}
+
 .description {
   color: #9ca3af;
   font-size: 0.95rem;
