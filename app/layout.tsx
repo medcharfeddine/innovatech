@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import ClientProviders from "./client-providers";
-import fs from "fs";
-import path from "path";
 
 async function getBrandingData() {
   try {
-    // Try to read from branding JSON file (cached)
+    // Skip file reading on Vercel - use defaults instead
+    if (process.env.VERCEL_URL || process.env.VERCEL) {
+      return null;
+    }
+
+    // Only read file on localhost
+    const fs = await import("fs");
+    const path = await import("path");
+    
     const brandingPath = path.join(process.cwd(), "public", "branding.json");
     if (fs.existsSync(brandingPath)) {
       const data = fs.readFileSync(brandingPath, "utf-8");

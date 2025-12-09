@@ -34,6 +34,11 @@ const DEFAULT_BRANDING = {
 
 async function getBrandingData() {
   try {
+    // Skip file operations on Vercel
+    if (process.env.VERCEL_URL || process.env.VERCEL) {
+      return DEFAULT_BRANDING;
+    }
+
     if (existsSync(BRANDING_FILE)) {
       const data = await readFile(BRANDING_FILE, 'utf-8');
       return JSON.parse(data);
@@ -46,10 +51,15 @@ async function getBrandingData() {
 
 async function saveBrandingData(data: any) {
   try {
+    // Skip file operations on Vercel
+    if (process.env.VERCEL_URL || process.env.VERCEL) {
+      console.warn('Branding data not persisted on Vercel (ephemeral filesystem)');
+      return;
+    }
+    
     await writeFile(BRANDING_FILE, JSON.stringify(data, null, 2), 'utf-8');
   } catch (error) {
     console.error('Error saving branding file:', error);
-    throw error;
   }
 }
 
