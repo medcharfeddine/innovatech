@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db/mongodb';
 import Order from '@/lib/models/Order';
+import User from '@/lib/models/User';
+import Product from '@/lib/models/Product';
 import { extractToken, verifyToken } from '@/lib/middleware/auth';
 
 export async function GET(req: NextRequest) {
