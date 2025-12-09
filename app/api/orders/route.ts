@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db/mongodb';
 import Order from '@/lib/models/Order';
+// @ts-ignore - Required for Mongoose schema registration with populate()
 import User from '@/lib/models/User';
 import { extractToken, verifyToken } from '@/lib/middleware/auth';
 
