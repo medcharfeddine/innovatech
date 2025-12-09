@@ -942,7 +942,7 @@ export default function AdminPage() {
       description: category.description || '',
       parent: category.parent?._id || '',
     });
-    setCurrentCategoryImageUrl(category.imageUrl || '');
+    setCurrentCategoryImageUrl(category.image || '');
     setEditingCategoryId(category._id);
     setCategoryModalOpen(true);
   };
@@ -1170,7 +1170,7 @@ export default function AdminPage() {
         slug: categoryForm.slug,
         description: categoryForm.description,
         parent: categoryForm.parent || null,
-        imageUrl: imageUrl || currentCategoryImageUrl,
+        image: imageUrl || currentCategoryImageUrl,
       };
 
       const method = editingCategoryId ? 'PUT' : 'POST';
@@ -1462,27 +1462,94 @@ export default function AdminPage() {
               {tabLoading ? (
                 <p>Loading categories...</p>
               ) : categories.length > 0 ? (
-                <div className={styles.categoriesGrid}>
-                  {categories.map((category: any) => (
-                    <div key={category._id} className={styles.categoryCard}>
-                      <div className={styles.categoryImage}>
-                        {category.image ? (
-                          <img src={category.image} alt={category.name} />
-                        ) : (
-                          <div className={styles.imagePlaceholder}>📁</div>
-                        )}
+                <div className={styles.categoriesTree}>
+                  {categories.map((parentCategory: any) => (
+                    <div key={parentCategory._id} className={styles.parentCategorySection}>
+                      {/* Parent Category Card */}
+                      <div className={styles.parentCategoryCard}>
+                        <div className={styles.parentCategoryContent}>
+                          <div className={styles.categoryImage}>
+                            {parentCategory.image ? (
+                              <img src={parentCategory.image} alt={parentCategory.name} />
+                            ) : (
+                              <div className={styles.imagePlaceholder}>📁</div>
+                            )}
+                          </div>
+                          <div className={styles.categoryInfo}>
+                            <h3 className={styles.categoryTitle}>{parentCategory.name}</h3>
+                            {parentCategory.description && (
+                              <p className={styles.categoryDescription}>{parentCategory.description}</p>
+                            )}
+                            <div className={styles.categoryMeta}>
+                              <span className={styles.subcategoryCount}>
+                                {parentCategory.subcategories?.length || 0} subcategories
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={styles.parentCategoryActions}>
+                          <button 
+                            className={styles.editBtn} 
+                            onClick={() => handleEditCategory(parentCategory)}
+                            title="Edit parent category"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button 
+                            className={styles.deleteBtn} 
+                            onClick={() => handleDeleteCategory(parentCategory._id, parentCategory.name)}
+                            title="Delete parent category"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
                       </div>
-                      <h3>{category.name}</h3>
-                      {category.parent && (
-                        <p className={styles.categoryParent}>
-                          Parent: <strong>{category.parent.name || 'Unknown'}</strong>
-                        </p>
+
+                      {/* Child Categories */}
+                      {parentCategory.subcategories && parentCategory.subcategories.length > 0 ? (
+                        <div className={styles.subcategoriesContainer}>
+                          {parentCategory.subcategories.map((child: any) => (
+                            <div key={child._id} className={styles.childCategoryCard}>
+                              <div className={styles.childCategoryContent}>
+                                <div className={styles.childIndicator}>↳</div>
+                                <div className={styles.categoryImage}>
+                                  {child.image ? (
+                                    <img src={child.image} alt={child.name} />
+                                  ) : (
+                                    <div className={styles.imagePlaceholder}>📂</div>
+                                  )}
+                                </div>
+                                <div className={styles.categoryInfo}>
+                                  <h4 className={styles.categoryTitle}>{child.name}</h4>
+                                  {child.description && (
+                                    <p className={styles.categoryDescription}>{child.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className={styles.childCategoryActions}>
+                                <button 
+                                  className={styles.editBtn} 
+                                  onClick={() => handleEditCategory(child)}
+                                  title="Edit subcategory"
+                                >
+                                  ✏️
+                                </button>
+                                <button 
+                                  className={styles.deleteBtn} 
+                                  onClick={() => handleDeleteCategory(child._id, child.name)}
+                                  title="Delete subcategory"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className={styles.emptySubcategories}>
+                          No subcategories yet. <button onClick={handleOpenCategoryModal} className={styles.addSubcategoryBtn}>Add one</button>
+                        </div>
                       )}
-                      <p className={styles.categoryCount}>{category.products || 0} products</p>
-                      <div className={styles.cardActions}>
-                        <button className={styles.editBtn} onClick={() => handleEditCategory(category)}>Edit</button>
-                        <button className={styles.deleteBtn} onClick={() => handleDeleteCategory(category._id, category.name)}>Delete</button>
-                      </div>
                     </div>
                   ))}
                 </div>

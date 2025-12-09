@@ -624,6 +624,243 @@
   margin-top: 1.5rem;
 }
 
+/* Hierarchical Categories Tree */
+.categoriesTree {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.parentCategorySection {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.parentCategoryCard {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-bottom: 2px solid #f0f0f0;
+  transition: background 0.2s ease;
+}
+
+.parentCategoryCard:hover {
+  background: linear-gradient(135deg, #f0f1f3 0%, #ffffff 100%);
+}
+
+.parentCategoryContent {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.categoryImage {
+  width: 100px;
+  height: 100px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.categoryImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  font-size: 2.5rem;
+  color: #ccc;
+}
+
+.categoryInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.categoryTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2a317f;
+  word-break: break-word;
+}
+
+.categoryDescription {
+  margin: 0.25rem 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.categoryMeta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.subcategoryCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  background: #e8eef7;
+  border-radius: 4px;
+  color: #2a317f;
+  font-weight: 500;
+}
+
+.parentCategoryActions,
+.childCategoryActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.editBtn,
+.deleteBtn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.editBtn {
+  background: #667eea;
+  color: white;
+}
+
+.editBtn:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.deleteBtn {
+  background: #f87171;
+  color: white;
+}
+
+.deleteBtn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(248, 113, 113, 0.3);
+}
+
+/* Subcategories Container */
+.subcategoriesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: #fafbfc;
+  border-left: 4px solid #667eea;
+}
+
+.childCategoryCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.childCategoryCard:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+}
+
+.childCategoryContent {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.childIndicator {
+  color: #999;
+  font-weight: bold;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.childCategoryCard .categoryImage {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+}
+
+.childCategoryCard .categoryTitle {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.childCategoryCard .categoryDescription {
+  -webkit-line-clamp: 1;
+}
+
+.childCategoryActions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.childCategoryActions button {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.emptySubcategories {
+  padding: 1.5rem;
+  background: #fafbfc;
+  border-left: 4px solid #999;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.addSubcategoryBtn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.addSubcategoryBtn:hover {
+  background: #5568d3;
+}
+
 .categoryCard,
 .bannerCard {
   background: white;
@@ -639,29 +876,6 @@
 .bannerCard:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.categoryImage,
-.bannerImage {
-  width: 100%;
-  height: 150px;
-  background: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.categoryImage img,
-.bannerImage img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.imagePlaceholder {
-  font-size: 3rem;
-  color: #ccc;
 }
 
 .categoryCard h3,

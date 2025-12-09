@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const { name, description, slug, parent, order } = await req.json();
+    const { name, description, slug, parent, order, image } = await req.json();
 
     if (!name) {
       return NextResponse.json({ message: 'Name is required' }, { status: 400 });
@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
       slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
       parent: parent || null,
       order: order || 0,
+      image: image || null,
     });
 
     await category.save();
