@@ -14,14 +14,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if running on Vercel
-    const isVercel = !!process.env.VERCEL_URL || process.env.NODE_ENV === 'production';
+    // Check if running on Vercel - more reliable detection
+    const isVercel = !!process.env.VERCEL_URL || process.env.VERCEL === 'true';
     
     if (isVercel) {
       return NextResponse.json(
         { 
-          error: 'File uploads are not supported on Vercel due to ephemeral filesystem. Please configure cloud storage (AWS S3, Cloudinary, or Supabase). See VERCEL_DEPLOYMENT_GUIDE.md for setup instructions.',
-          helpUrl: 'https://github.com/medcharfeddine/innovatech#vercel-deployment'
+          error: 'File uploads are not supported on Vercel due to ephemeral filesystem. Configure cloud storage (AWS S3, Cloudinary, Supabase) instead.',
+          helpUrl: 'https://vercel.com/docs/storage/overview'
         },
         { status: 501 }
       );
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/x-icon'];
     if (!validImageTypes.includes(file.type)) {
       return NextResponse.json(
         { error: `File must be an image (${validImageTypes.join(', ')})` },
@@ -47,12 +47,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 50MB)
-    const maxSize = 50 * 1024 * 1024;
+    // Validate file size (max 10MB on production, 50MB on development)
+    const maxSize = isVercel ? 5 * 1024 * 1024 : 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: `File size must be less than 50MB (current: ${(file.size / 1024 / 1024).toFixed(2)}MB)` },
-        { status: 400 }
+        { error: `File size must be less than ${maxSize / 1024 / 1024}MB (current: ${(file.size / 1024 / 1024).toFixed(2)}MB)` },
+        { status: 413 }
       );
     }
 
@@ -72,17 +72,8 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     await writeFile(filepath, Buffer.from(bytes));
 
-    // Return public URL with full domain
-    let url = `/uploads/${filename}`;
-    
-    // Get full URL for deployment
-    const protocol = request.headers.get('x-forwarded-proto') || 'https';
-    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-    
-    if (host && host !== 'localhost:3000') {
-      // On production (but not Vercel)
-      url = `${protocol}://${host}/uploads/${filename}`;
-    }
+    // Return public URL
+    const url = `/uploads/${filename}`;
 
     return NextResponse.json(
       { url, filename },
@@ -90,9 +81,13 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     console.error('Error uploading file:', error);
+    
+    // Return appropriate status code for different errors
+    const status = error.code === 'ENOSPC' ? 507 : 500;
+    
     return NextResponse.json(
       { error: error.message || 'Upload failed' },
-      { status: 500 }
+      { status }
     );
   }
 }
