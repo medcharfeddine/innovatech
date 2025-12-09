@@ -29,16 +29,12 @@ export default function MainHeader() {
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        // Add timestamp to prevent caching
-        const response = await fetch(`/api/branding?t=${Date.now()}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        // Cache branding for 1 hour - it changes infrequently
+        const response = await fetch('/api/branding', {
+          next: { revalidate: 3600 },
         });
         
         if (!response.ok) {
-          console.warn('Branding API returned status:', response.status);
           return;
         }
         
@@ -52,19 +48,32 @@ export default function MainHeader() {
             primaryColor: data.primaryColor,
             accentColor: data.accentColor,
           });
-          document.title = data.siteName || data.storeName || 'Nova';
+          if (data.siteName) {
+            document.title = data.siteName;
+          }
+          
+          // Set favicon if available
+          if (data.faviconUrl) {
+            let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+            if (!favicon) {
+              favicon = document.createElement('link');
+              favicon.rel = 'icon';
+              favicon.type = 'image/x-icon';
+              document.head.appendChild(favicon);
+            }
+            // Add timestamp to bypass cache when favicon changes
+            favicon.href = `${data.faviconUrl}?t=${Date.now()}`;
+          }
         }
       } catch (error) {
-        console.error('Error fetching branding:', error);
-        // Keep default branding on error
+        // Silently fail - keep default branding
       }
     };
 
     fetchBranding();
     
-    // Refresh branding every 30 seconds to catch admin updates
-    const interval = setInterval(fetchBranding, 30000);
-    
+    // Poll for branding changes every 5 minutes for admin users
+    const interval = setInterval(fetchBranding, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -83,26 +92,18 @@ export default function MainHeader() {
       <div className={styles.container}>
         {/* Logo */}
         <div className={styles.logo}>
-          <Link href="/" aria-label="Nova Home" className={styles.logoLink}>
+          <Link href="/" aria-label={branding.siteName || branding.storeName || 'Home'} className={styles.logoLink}>
             {branding.logoUrl && branding.logoUrl.trim() ? (
               <img 
-                key={branding.logoUrl} // Force re-render when URL changes
-                src={`${branding.logoUrl}?t=${Date.now()}`} // Cache buster
-                alt={branding.siteName || branding.storeName || 'Nova'}
+                src={branding.logoUrl}
+                alt={branding.siteName || branding.storeName || 'Logo'}
                 className={styles.logoImage}
+                loading="eager"
                 onError={(e) => {
-                  console.error('Logo failed to load:', branding.logoUrl);
                   e.currentTarget.style.display = 'none';
-                  // Add fallback text
-                  const fallback = document.createElement('span');
-                  fallback.className = styles.logoText;
-                  fallback.textContent = branding.siteName || branding.storeName || 'Nova';
-                  e.currentTarget.parentElement?.appendChild(fallback);
                 }}
               />
-            ) : (
-              <span className={styles.logoText}>{branding.siteName || branding.storeName || 'Nova'}</span>
-            )}
+            ) : null}
           </Link>
         </div>
 

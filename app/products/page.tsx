@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
 import styles from '@/styles/products.module.css';
 
@@ -10,7 +11,6 @@ interface Product {
   price: number;
   imageUrl?: string;
   images?: string[];
-  category?: string;
   categoryParent?: string;
   categoryChild?: string;
   rating?: number;
@@ -18,20 +18,62 @@ interface Product {
   featured?: boolean;
 }
 
-export default function ProductsPage() {
+function ProductsPageContent() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('newest');
   const [searchTerm, setSearchTerm] = useState('');
+  const [allCategories, setAllCategories] = useState<any[]>([]);
 
+  // Fetch categories on mount - get all parent categories with subcategories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories', {
+          next: { revalidate: 3600 }, // Cache for 1 hour on server
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAllCategories(Array.isArray(data) ? data : data.categories || []);
+        }
+      } catch (error) {
+        // Silently fail - use default empty state
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Handle URL category parameter
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [searchParams]);
+
+  // Fetch products based on selected category
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/products?adminView=false');
+        setLoading(true);
+        let url = '/api/products';
+        
+        if (selectedCategory) {
+          url += `?category=${encodeURIComponent(selectedCategory)}`;
+        }
+        
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
-          setProducts(Array.isArray(data) ? data : data.products || []);
+          // Handle both old format (array) and new format (with pagination)
+          if (Array.isArray(data)) {
+            setProducts(data);
+          } else {
+            setProducts(data.products || []);
+          }
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -41,47 +83,28 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, []);
+  }, [selectedCategory]);
 
-  // Get unique categories
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    products.forEach(p => {
-      if (p.categoryParent) cats.add(p.categoryParent);
-    });
-    return ['all', ...Array.from(cats).sort()];
-  }, [products]);
-
-  // Filter and sort products
+  // Filter and sort products locally
   const filteredProducts = useMemo(() => {
-    let filtered = products;
+    let filtered = [...products];
 
-    // Category filter
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => p.categoryParent === selectedCategory);
-    }
-
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Sort
     if (sortBy === 'price-low') {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-high') {
       filtered.sort((a, b) => b.price - a.price);
     } else if (sortBy === 'rating') {
       filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    } else if (sortBy === 'newest') {
-      // Keep original order (assumes API returns newest first)
-      filtered = [...filtered];
     }
 
     return filtered;
-  }, [products, selectedCategory, sortBy, searchTerm]);
+  }, [products, sortBy, searchTerm]);
 
   if (loading) {
     return <div className={styles.loading}>Loading products...</div>;
@@ -106,20 +129,28 @@ export default function ProductsPage() {
 
           <h3>Category</h3>
           <div className={styles.categoryFilter}>
-            {categories.map(cat => (
-              <label key={cat}>
+            <label>
+              <input
+                type="radio"
+                name="category"
+                value=""
+                checked={!selectedCategory}
+                onChange={() => setSelectedCategory(null)}
+                aria-label="Show all products"
+              />
+              All Products
+            </label>
+            {allCategories.map(cat => (
+              <label key={cat.slug}>
                 <input
                   type="radio"
                   name="category"
-                  value={cat}
-                  checked={selectedCategory === cat}
+                  value={cat.slug}
+                  checked={selectedCategory === cat.slug}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  aria-label={`Filter by ${cat} category`}
+                  aria-label={`Filter by ${cat.name} category`}
                 />
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                <span className={styles.count}>
-                  ({products.filter(p => cat === 'all' || p.categoryParent === cat).length})
-                </span>
+                {cat.name}
               </label>
             ))}
           </div>
@@ -159,5 +190,13 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className={styles.loading}>Loading products...</div>}>
+      <ProductsPageContent />
+    </Suspense>
   );
 }

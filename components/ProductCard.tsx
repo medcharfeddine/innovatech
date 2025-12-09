@@ -31,7 +31,7 @@ function ProductCard({ product, onRemoveFromFeatured }: { product: Product; onRe
 
   const imageUrl = product.images?.[0] || product.imageUrl;
   const normalizedUrl = imageUrl ? imageUrl : placeholder;
-  const discountedPrice = product.discount 
+  const discountedPrice = product.discount && product.discount > 0
     ? (product.price * (1 - product.discount / 100)).toFixed(0)
     : null;
 
@@ -44,9 +44,9 @@ function ProductCard({ product, onRemoveFromFeatured }: { product: Product; onRe
     <article className={styles.card}>
       <Link href={`/products/${product._id}`} className={styles.media}>
         <div className={styles.backdrop} aria-hidden="true" />
-        {product.discount && (
+        {product.discount ? product.discount > 0 && (
           <div className={styles.badge}>-{product.discount}%</div>
-        )}
+        ) : null}
         <img 
           src={normalizedUrl}
           alt={product.name} 
@@ -76,11 +76,11 @@ function ProductCard({ product, onRemoveFromFeatured }: { product: Product; onRe
         <div className={styles.meta}>
           {discountedPrice ? (
             <div className={styles.priceContainer}>
-              <span className={styles.originalPrice}>د.ت {product.price},000</span>
-              <span className={styles.price}>د.ت {discountedPrice},000</span>
+              <span className={styles.originalPrice}>د.ت {product.price}</span>
+              <span className={styles.price}>د.ت {discountedPrice}</span>
             </div>
           ) : (
-            <span className={styles.price}>د.ت {`${product.price},000`}</span>
+            <span className={styles.price}>د.ت {product.price}</span>
           )}
         </div>
 

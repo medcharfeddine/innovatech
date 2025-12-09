@@ -7,7 +7,7 @@ import styles from './Header.module.css';
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
-  const [branding, setBranding] = useState({ siteName: 'Nova', logoUrl: '', faviconUrl: '' });
+  const [branding, setBranding] = useState({  logoUrl: '', faviconUrl: '' });
   const [user, setUser] = useState<any>(null);
 
   // Load user from localStorage
@@ -30,7 +30,7 @@ const Header = () => {
         if (response.ok) {
           const data = await response.json();
           setBranding(data);
-          document.title = data.siteName || 'Nova';
+          document.title = data.siteName || data.storeName || 'Nova';
           
           // Set favicon if available
           if (data.faviconUrl) {
@@ -38,17 +38,23 @@ const Header = () => {
             if (!favicon) {
               favicon = document.createElement('link');
               favicon.rel = 'icon';
+              favicon.type = 'image/x-icon';
               document.head.appendChild(favicon);
             }
-            favicon.href = data.faviconUrl;
+            // Add timestamp to bypass cache when favicon changes
+            favicon.href = `${data.faviconUrl}?t=${Date.now()}`;
           }
         }
       } catch (error) {
-        console.error('Error fetching branding:', error);
+        // Silently fail
       }
     };
 
     fetchBranding();
+    
+    // Poll for branding changes every 5 minutes
+    const interval = setInterval(fetchBranding, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch categories
@@ -65,13 +71,11 @@ const Header = () => {
             categories: parentCategories.map((c: any) => ({ name: c.name, id: c._id }))
           });
           setCategories(parentCategories.slice(0, 8));
-        } else {
-          console.error('Failed to fetch categories:', response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Error fetching categories:', error);
       }
     };
+    
 
     fetchCategories();
   }, []);
@@ -112,7 +116,7 @@ const Header = () => {
               {branding.logoUrl ? (
                 <img 
                   src={branding.logoUrl} 
-                  alt={branding.siteName}
+                  alt={branding.logoUrl}
                   className={styles.logoImage}
                   loading="lazy"
                   onError={(e) => {
@@ -121,12 +125,12 @@ const Header = () => {
                     // Show fallback text
                     const fallback = document.createElement('span');
                     fallback.className = styles.brand;
-                    fallback.textContent = branding.siteName;
+                    fallback.textContent = branding.logoUrl;
                     e.currentTarget.parentElement?.appendChild(fallback);
                   }}
                 />
               ) : (
-                <span className={styles.brand}>{branding.siteName}</span>
+                <span className={styles.brand}>{branding.logoUrl}</span>
               )}
             </Link>
           </div>
@@ -233,22 +237,22 @@ const Header = () => {
                     </Link>
                     
                     {/* Subcategories Dropdown */}
-                    {category.subcategories && category.subcategories.length > 0 && (
+                    {category.children && category.children.length > 0 && (
                       <div className={styles.categoryDropdown}>
-                        {category.subcategories.map((subcategory: any) => (
+                        {category.children.map((child: any) => (
                           <Link
-                            key={subcategory._id}
-                            href={`/products?category=${subcategory.slug}`}
+                            key={child._id}
+                            href={`/products?category=${child.slug}`}
                             className={styles.dropdownLink}
                           >
-                            {subcategory.image && (
+                            {child.image && (
                               <img 
-                                src={subcategory.image}
-                                alt={subcategory.name}
+                                src={child.image}
+                                alt={child.name}
                                 className={styles.dropdownIcon}
                               />
                             )}
-                            <span>{subcategory.name}</span>
+                            <span>{child.name}</span>
                           </Link>
                         ))}
                       </div>

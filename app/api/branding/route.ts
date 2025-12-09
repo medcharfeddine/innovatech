@@ -53,7 +53,6 @@ async function saveBrandingData(data: any) {
 
 export async function GET(_request: NextRequest) {
   try {
-    await connectDB();
     const branding = await getBrandingData();
     
     // Ensure valid JSON response

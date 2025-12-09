@@ -61,7 +61,6 @@ export default function ContactPage() {
         type: 'error',
         text: 'An error occurred. Please try again later.',
       });
-      console.error('Error sending message:', error);
     } finally {
       setLoading(false);
     }

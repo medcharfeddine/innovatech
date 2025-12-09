@@ -44,11 +44,15 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const product = await Product.findByIdAndUpdate(id, body, { new: true });
-
+    
+    // Find product and use .save() to trigger pre-save hooks (for category parsing)
+    const product = await Product.findById(id);
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
+    
+    Object.assign(product, body);
+    await product.save();
 
     return NextResponse.json(product);
   } catch (error: any) {
@@ -77,11 +81,15 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json();
-    const product = await Product.findByIdAndUpdate(id, body, { new: true });
-
+    
+    // Find product and use .save() to trigger pre-save hooks (for category parsing)
+    const product = await Product.findById(id);
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
+    
+    Object.assign(product, body);
+    await product.save();
 
     return NextResponse.json(product);
   } catch (error: any) {

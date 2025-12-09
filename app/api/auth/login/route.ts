@@ -31,8 +31,6 @@ export async function POST(req: NextRequest) {
       role: user.role,
     });
 
-    console.log(`User ${user.email} logged in at ${new Date().toISOString()}`);
-
     return NextResponse.json({
       token,
       user: {

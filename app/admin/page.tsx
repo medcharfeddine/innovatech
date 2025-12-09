@@ -46,14 +46,18 @@ export default function AdminPage() {
     description: '',
     price: 0,
     category: '',
+    subcategory: '',
     stock: 0,
     featured: false,
     discount: 0,
   });
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImageFiles, setProductImageFiles] = useState<File[]>([]);
   const [currentProductImageUrl, setCurrentProductImageUrl] = useState<string>('');
+  const [currentProductImages, setCurrentProductImages] = useState<string[]>([]);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productFormLoading, setProductFormLoading] = useState(false);
+  const [categorySubcategories, setCategorySubcategories] = useState<any[]>([]);
 
   // Category modal states
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -104,7 +108,6 @@ export default function AdminPage() {
           setStats(data);
         }
       } catch (err) {
-        console.error('Auth check failed:', err);
         router.push('/login');
       } finally {
         setLoading(false);
@@ -113,6 +116,46 @@ export default function AdminPage() {
 
     checkAuth();
   }, [router]);
+
+  // Fetch categories on mount for product modal
+  useEffect(() => {
+    const fetchCategoriesForModal = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/categories/all', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(Array.isArray(data) ? data : data.categories || []);
+        }
+      } catch (error) {
+        console.error('Error fetching categories for modal:', error);
+      }
+    };
+
+    fetchCategoriesForModal();
+  }, []);
+
+  // Auto-refresh polling for real-time sync (every 10 seconds)
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      // Only refresh if admin is focused and data is loaded
+      if (activeTab === 'products' && products.length > 0) {
+        fetchTabData('products');
+      } else if (activeTab === 'categories' && categories.length > 0) {
+        fetchTabData('categories');
+      } else if (activeTab === 'orders' && orders.length > 0) {
+        fetchTabData('orders');
+      } else if (activeTab === 'users' && users.length > 0) {
+        fetchTabData('users');
+      } else if (activeTab === 'banners' && banners.length > 0) {
+        fetchTabData('banners');
+      }
+    }, 10000); // 10 second polling interval
+
+    return () => clearInterval(pollInterval);
+  }, [activeTab, products.length, categories.length, orders.length, users.length, banners.length]);
 
   const handleTabChange = (tabName: string) => {
     setActiveTab(tabName);
@@ -143,7 +186,7 @@ export default function AdminPage() {
 
       switch (tab) {
         case 'products':
-          const productsRes = await fetch('/api/products?adminView=true', { headers });
+          const productsRes = await fetch('/api/products', { headers });
           if (productsRes.ok) {
             const data = await productsRes.json();
             setProducts(Array.isArray(data) ? data : data.products || []);
@@ -153,14 +196,8 @@ export default function AdminPage() {
           const categoriesRes = await fetch('/api/categories/all', { headers });
           if (categoriesRes.ok) {
             const data = await categoriesRes.json();
-            console.log('Categories fetched from DB:', {
-              isArray: Array.isArray(data),
-              count: Array.isArray(data) ? data.length : 0,
-              data: data,
-            });
             setCategories(Array.isArray(data) ? data : data.categories || []);
           } else {
-            console.error('Categories fetch failed:', categoriesRes.status);
             // Fallback to regular categories endpoint
             const fallbackRes = await fetch('/api/categories', { headers });
             if (fallbackRes.ok) {
@@ -179,18 +216,12 @@ export default function AdminPage() {
             const ordersRes = await fetch('/api/orders', { headers });
             if (ordersRes.ok) {
               const data = await ordersRes.json();
-              console.log('Orders fetched from DB:', {
-                count: Array.isArray(data) ? data.length : 0,
-                data: data,
-              });
               const ordersList = Array.isArray(data) ? data : data.orders || [];
               setOrders(ordersList);
             } else {
-              console.error('Orders fetch failed:', ordersRes.status);
               setOrders([]);
             }
           } catch (error) {
-            console.error('Error fetching orders:', error);
             setOrders([]);
           }
           break;
@@ -801,10 +832,12 @@ export default function AdminPage() {
       description: '',
       price: 0,
       category: '',
+      subcategory: '',
       stock: 0,
       featured: false,
       discount: 0,
     });
+    setCategorySubcategories([]);
     setProductImageFile(null);
     setEditingProductId(null);
     setProductModalOpen(true);
@@ -817,25 +850,35 @@ export default function AdminPage() {
       description: '',
       price: 0,
       category: '',
+      subcategory: '',
       stock: 0,
       featured: false,
       discount: 0,
     });
+    setCategorySubcategories([]);
     setProductImageFile(null);
+    setProductImageFiles([]);
+    setCurrentProductImageUrl('');
+    setCurrentProductImages([]);
     setEditingProductId(null);
   };
 
   const handleEditProduct = (product: any) => {
+    const selectedCat = categories.find(cat => cat.name === product.categoryParent || cat.name === product.category);
+    setCategorySubcategories(selectedCat?.subcategories || []);
+    
     setProductForm({
       name: product.name,
       description: product.description || '',
       price: product.price,
-      category: product.category || '',
+      category: product.categoryParent || product.category || '',
+      subcategory: product.categoryChild || '',
       stock: product.stock || 0,
       featured: product.featured || false,
       discount: product.discount || 0,
     });
     setCurrentProductImageUrl(product.imageUrl || '');
+    setCurrentProductImages(product.images || []);
     setEditingProductId(product._id);
     setProductModalOpen(true);
   };
@@ -953,8 +996,9 @@ export default function AdminPage() {
     try {
       const token = localStorage.getItem('token');
       let imageUrl = '';
+      let additionalImages: string[] = [];
 
-      // Upload image if provided
+      // Upload primary image if provided
       if (productImageFile) {
         const formData = new FormData();
         formData.append('file', productImageFile);
@@ -977,10 +1021,43 @@ export default function AdminPage() {
         imageUrl = uploadData.url;
       }
 
+      // Upload additional images if provided
+      if (productImageFiles.length > 0) {
+        for (const file of productImageFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('type', 'product');
+
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (!uploadRes.ok) {
+            const errorData = await uploadRes.json().catch(() => ({}));
+            throw new Error(errorData.error || `Upload failed with status ${uploadRes.status}`);
+          }
+
+          const uploadData = await uploadRes.json();
+          additionalImages.push(uploadData.url);
+        }
+      }
+
       // Create or update product
       const productData = {
-        ...productForm,
+        name: productForm.name,
+        description: productForm.description,
+        price: productForm.price,
+        categoryParent: productForm.category,
+        categoryChild: productForm.subcategory,
+        stock: productForm.stock,
+        featured: productForm.featured,
+        discount: productForm.discount,
         imageUrl: imageUrl || currentProductImageUrl,
+        images: additionalImages.length > 0 ? additionalImages : currentProductImages,
       };
 
       console.log('Sending product data:', productData);
@@ -1027,12 +1104,15 @@ export default function AdminPage() {
           description: '',
           price: 0,
           category: '',
+          subcategory: '',
           stock: 0,
           featured: false,
           discount: 0,
         });
         setCurrentProductImageUrl('');
+        setCurrentProductImages([]);
         setProductImageFile(null);
+        setProductImageFiles([]);
         setEditingProductId(null);
         setProductModalOpen(false);
         alert(editingProductId ? 'Product updated successfully! It will appear on the frontend within 10 seconds.' : 'Product created successfully! It will appear on the frontend within 10 seconds.');
@@ -1558,11 +1638,21 @@ export default function AdminPage() {
               {branding ? (
                 <div className={styles.brandingForm}>
                   <div className={styles.formGroup}>
+                    <label>Site Name</label>
+                    <input 
+                      type="text" 
+                      value={branding.siteName || 'Nova'}
+                      onChange={(e) => handleBrandingInputChange('siteName', e.target.value)}
+                      placeholder="Enter your site name"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
                     <label>Store Name</label>
                     <input 
                       type="text" 
                       value={branding.storeName || 'Nova Store'}
                       onChange={(e) => handleBrandingInputChange('storeName', e.target.value)}
+                      placeholder="Enter your store name"
                     />
                   </div>
                   <div className={styles.formGroup}>
@@ -1728,7 +1818,11 @@ export default function AdminPage() {
                 <label>Category</label>
                 <select
                   value={productForm.category}
-                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                  onChange={(e) => {
+                    const selectedCat = categories.find(cat => cat.name === e.target.value);
+                    setCategorySubcategories(selectedCat?.subcategories || []);
+                    setProductForm({ ...productForm, category: e.target.value, subcategory: '' });
+                  }}
                 >
                   <option value="">Select a category</option>
                   {categories.map(cat => (
@@ -1736,6 +1830,21 @@ export default function AdminPage() {
                   ))}
                 </select>
               </div>
+
+              {categorySubcategories.length > 0 && (
+                <div className={styles.formGroup}>
+                  <label>Subcategory</label>
+                  <select
+                    value={productForm.subcategory}
+                    onChange={(e) => setProductForm({ ...productForm, subcategory: e.target.value })}
+                  >
+                    <option value="">Select a subcategory (optional)</option>
+                    {categorySubcategories.map(subcat => (
+                      <option key={subcat._id} value={subcat.name}>{subcat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className={styles.formGroup}>
                 <label>Price *</label>
@@ -1766,6 +1875,21 @@ export default function AdminPage() {
                   accept="image/*"
                   onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
                 />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Additional Images (Multiple)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setProductImageFiles(Array.from(e.target.files || []))}
+                />
+                {currentProductImages.length > 0 && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>
+                    Current images: {currentProductImages.length}
+                  </div>
+                )}
               </div>
 
               <div className={styles.formGroup}>

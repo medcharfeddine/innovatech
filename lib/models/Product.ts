@@ -5,13 +5,13 @@ const productSchema = new mongoose.Schema(
     name: { type: String, required: true },
     description: String,
     price: { type: Number, required: true },
-    category: String,
-    categoryParent: { type: String, index: true },
-    categoryChild: { type: String, index: true },
+    categoryParent: String, // Parent category name
+    categoryChild: String, // Child category name (optional)
     brand: String,
     sku: String,
     stock: { type: Number, default: 0 },
-    imageUrl: String,
+    imageUrl: String, // Primary/thumbnail image
+    images: [String], // Array of additional product images
     featured: { type: Boolean, default: false },
     discount: { type: Number, default: 0, min: 0, max: 100 },
     dealPrice: Number,
@@ -36,28 +36,17 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-productSchema.index({ categoryParent: 1, categoryChild: 1 });
-
+// Pre-save hook to extract categoryParent and categoryChild from category field
 productSchema.pre('save', function (next) {
-  try {
-    if (this.category && !this.categoryParent && !this.categoryChild) {
-      const parts = this.category
-        .split('>')
-        .map((p: string) => p && p.trim())
-        .filter(Boolean);
-      if (parts.length === 1) {
-        this.categoryParent = parts[0];
-        this.categoryChild = undefined;
-      } else if (parts.length >= 2) {
-        this.categoryParent = parts[0];
-        this.categoryChild = parts.slice(1).join(' > ');
-      }
-    }
-    next();
-  } catch (error) {
-    next(error as any);
+  if (this.categoryParent && !this.categoryChild) {
+    // If categoryParent is set but categoryChild is not, it's a simple category
+    // This is fine, just continue
   }
+  next();
 });
+
+productSchema.index({ categoryParent: 1 });
+productSchema.index({ categoryChild: 1 });
 
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
 

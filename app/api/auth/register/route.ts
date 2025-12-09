@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Register error:', error);
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

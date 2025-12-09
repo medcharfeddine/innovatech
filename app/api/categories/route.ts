@@ -17,7 +17,7 @@ export async function GET() {
 
     // For each parent, fetch its subcategories
     const categoriesWithSubcategories = await Promise.all(
-      parentCategories.map(async (parent: any) => {
+      parentCategories.map(async (parent) => {
         const subcategories = await Category.find({ parent: parent._id })
           .sort('order')
           .lean()
