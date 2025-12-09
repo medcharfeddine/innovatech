@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import ClientProviders from "./client-providers";
-import { connectDB } from "@/lib/db/mongodb";
 import fs from "fs";
 import path from "path";
 
