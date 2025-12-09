@@ -7,35 +7,46 @@ import { extractToken, verifyToken } from '@/lib/middleware/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
-
     const token = extractToken(req);
-    let decoded = null;
-    let isAdmin = false;
-
-    // Try to authenticate if token is provided
-    if (token) {
-      decoded = verifyToken(token);
-      if (decoded) {
-        isAdmin = decoded.role === 'admin';
-      }
-    }
-
-    // Only return all orders if authenticated as admin, otherwise 401
-    if (!isAdmin) {
+    
+    // If not authenticated, return 401 early
+    if (!token) {
       return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
     }
 
-    // Get all orders for admin
-    const orders = await Order.find({})
-      .populate('user')
-      .populate('products.product')
-      .populate('tracking.by');
+    const decoded = verifyToken(token);
+    
+    // If token verification failed, return 401
+    if (!decoded) {
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 });
+    }
+
+    // Connect to database after authentication check
+    await connectDB();
+
+    const isAdmin = decoded.role === 'admin';
+    const userId = decoded.id;
+
+    // Get orders based on user role
+    let orders;
+    if (isAdmin) {
+      // Admins can see all orders
+      orders = await Order.find({})
+        .populate('user')
+        .populate('products.product')
+        .populate('tracking.by');
+    } else {
+      // Regular users can only see their own orders
+      orders = await Order.find({ user: userId })
+        .populate('user')
+        .populate('products.product')
+        .populate('tracking.by');
+    }
 
     return NextResponse.json(orders);
   } catch (error: any) {
     console.error('Get orders error:', error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: error.message || 'Failed to fetch orders' }, { status: 500 });
   }
 }
 

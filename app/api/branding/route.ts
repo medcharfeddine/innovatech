@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db/mongodb';
 import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -18,7 +17,7 @@ const DEFAULT_BRANDING = {
   pageTitle: 'Nova - E-commerce Platform',
   pageDescription: 'Premium e-commerce platform for shopping',
   logoUrl: '',
-  faviconUrl: '/favicon.ico',
+  faviconUrl: '',
   primaryColor: '#2a317f',
   accentColor: '#df172e',
   description: 'Premium E-commerce Store',
@@ -92,7 +91,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    await connectDB();
 
     // Get existing branding and merge with new data
     const existingBranding = await getBrandingData();

@@ -43,28 +43,28 @@ export default function Footer() {
             <ul className={styles.links}>
               <li><Link href="/products">Products</Link></li>
               <li><Link href="/categories">Categories</Link></li>
-              <li><Link href="/deals">Deals</Link></li>
-              <li><Link href="/featured">Featured</Link></li>
+              <li><Link href="/cart">Shopping Cart</Link></li>
+              <li><Link href="/login">Login</Link></li>
             </ul>
           </div>
 
           <div className={styles.section}>
-            <h4 className={styles.sectionTitle}>Support</h4>
+            <h4 className={styles.sectionTitle}>Customer</h4>
             <ul className={styles.links}>
-              <li><Link href="/contact">Contact Us</Link></li>
-              <li><Link href="/faq">FAQ</Link></li>
-              <li><Link href="/shipping">Shipping Info</Link></li>
-              <li><Link href="/returns">Returns</Link></li>
+              <li><Link href="/register">Create Account</Link></li>
+              <li><Link href="/dashboard">My Dashboard</Link></li>
+              <li><a href="mailto:support@nova.com">Email Support</a></li>
+              <li><a href="tel:+1234567890">Call Us</a></li>
             </ul>
           </div>
 
           <div className={styles.section}>
             <h4 className={styles.sectionTitle}>Company</h4>
             <ul className={styles.links}>
-              <li><Link href="/about">About Us</Link></li>
-              <li><Link href="/blog">Blog</Link></li>
-              <li><Link href="/privacy">Privacy</Link></li>
-              <li><Link href="/terms">Terms</Link></li>
+              <li><a href="#about">About Nova</a></li>
+              <li><a href="#mission">Our Mission</a></li>
+              <li><a href="#privacy">Privacy Policy</a></li>
+              <li><a href="#terms">Terms of Service</a></li>
             </ul>
           </div>
         </div>

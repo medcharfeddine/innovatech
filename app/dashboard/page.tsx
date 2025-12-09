@@ -52,11 +52,16 @@ export default function Dashboard() {
 
         if (response.ok) {
           const allOrders = await response.json();
-          // Filter orders for current user
-          const userOrders = Array.isArray(allOrders) 
-            ? allOrders.filter((order: Order) => order.user === userData._id)
-            : [];
-          setOrders(userOrders);
+          // API already filters by user role, so just use the returned orders
+          setOrders(Array.isArray(allOrders) ? allOrders : []);
+        } else if (response.status === 401) {
+          // Token expired or invalid, redirect to login
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          router.push('/login');
+        } else {
+          console.error('Failed to fetch orders:', response.status, response.statusText);
+          setOrders([]);
         }
       } catch (error) {
         console.error('Error loading dashboard:', error);

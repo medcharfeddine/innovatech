@@ -32,8 +32,8 @@ const Header = () => {
           setBranding(data);
           document.title = data.siteName || data.storeName || 'Nova';
           
-          // Set favicon if available
-          if (data.faviconUrl) {
+          // Only set favicon if custom one is provided
+          if (data.faviconUrl && data.faviconUrl !== '/favicon.ico') {
             let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
             if (!favicon) {
               favicon = document.createElement('link');
@@ -41,8 +41,7 @@ const Header = () => {
               favicon.type = 'image/x-icon';
               document.head.appendChild(favicon);
             }
-            // Add timestamp to bypass cache when favicon changes
-            favicon.href = `${data.faviconUrl}?t=${Date.now()}`;
+            favicon.href = data.faviconUrl;
           }
         }
       } catch (error) {
@@ -66,16 +65,12 @@ const Header = () => {
           const data = await response.json();
           // Data is already an array of parent categories with subcategories
           const parentCategories = Array.isArray(data) ? data : (data.data || []);
-          console.log('Categories fetched successfully:', {
-            count: parentCategories.length,
-            categories: parentCategories.map((c: any) => ({ name: c.name, id: c._id }))
-          });
           setCategories(parentCategories.slice(0, 8));
         }
       } catch (error) {
       }
     };
-    
+
 
     fetchCategories();
   }, []);

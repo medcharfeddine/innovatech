@@ -27,10 +27,6 @@ export default function CategoriesMenu() {
           const data = await response.json();
           // Data is already an array of parent categories with subcategories
           const parentCategories = Array.isArray(data) ? data : (data.data || []);
-          console.log('CategoriesMenu - Categories fetched:', {
-            count: parentCategories.length,
-            categories: parentCategories.map((c: Category) => ({ name: c.name, id: c._id, subs: c.subcategories?.length || 0 }))
-          });
           setCategories(parentCategories.slice(0, 8));
         } else {
           console.error('CategoriesMenu - Failed to fetch categories:', response.status);

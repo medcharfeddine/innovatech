@@ -47,6 +47,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
+      <head>
+        {/* Default favicon - avoids 404 errors */}
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%232a317f' font-weight='bold'>N</text></svg>" />
+      </head>
       <body>
         <ClientProviders>{children}</ClientProviders>
       </body>
