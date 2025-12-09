@@ -6,6 +6,7 @@ import Link from 'next/link';
 import styles from './admin.module.css';
 import AdminHomeSettings from '@/components/AdminHomeSettings';
 import AdminProductFeaturing from '@/components/AdminProductFeaturing';
+import FTPSettings from '@/components/FTPSettings';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -1349,6 +1350,13 @@ export default function AdminPage() {
               <span>Branding</span>
             </button>
             <button
+              className={`${styles.navItem} ${activeTab === 'ftp' ? styles.active : ''}`}
+              onClick={() => handleTabChange('ftp')}
+            >
+              <span className={styles.navIcon}>🌐</span>
+              <span>FTP Server</span>
+            </button>
+            <button
               className={`${styles.navItem} ${activeTab === 'analytics' ? styles.active : ''}`}
               onClick={() => handleTabChange('analytics')}
             >
@@ -1823,6 +1831,20 @@ export default function AdminPage() {
               ) : (
                 <p className={styles.emptyState}>Branding settings not available</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ftp' && (
+          <div className={styles.tabContent}>
+            <h1 className={styles.contentTitle}>FTP Server Management</h1>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Configure FTP Server for Image Storage</h2>
+              <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+                Connect your e-commerce store to an FTP server to manage and serve all product images, 
+                category images, and branding assets from a centralized location.
+              </p>
+              {user && <FTPSettings token={localStorage.getItem('token') || ''} />}
             </div>
           </div>
         )}
