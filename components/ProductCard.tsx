@@ -44,9 +44,9 @@ function ProductCard({ product, onRemoveFromFeatured }: { product: Product; onRe
     <article className={styles.card}>
       <Link href={`/products/${product._id}`} className={styles.media}>
         <div className={styles.backdrop} aria-hidden="true" />
-        {product.discount && product.discount > 0 && (
+        {product.discount && product.discount > 0 ? (
           <div className={styles.badge}>-{product.discount}%</div>
-        )}
+        ) : null}
         <img 
           src={normalizedUrl}
           alt={product.name} 
