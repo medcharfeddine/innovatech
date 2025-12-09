@@ -1,7 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { Client } from 'basic-ftp';
+
+const FTP_CONFIG_FILE = join(process.cwd(), 'public', 'ftp-config.json');
+
+async function getFtpConfig() {
+  try {
+    if (process.env.VERCEL_URL || process.env.VERCEL) {
+      return null;
+    }
+
+    if (existsSync(FTP_CONFIG_FILE)) {
+      const data = await readFile(FTP_CONFIG_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error reading FTP config:', error);
+  }
+  return null;
+}
+
+async function uploadToFtp(file: File, filename: string, ftpConfig: any): Promise<string | null> {
+  let client: Client | null = null;
+  try {
+    client = new Client();
+    await client.access({
+      host: ftpConfig.host,
+      port: ftpConfig.port || 21,
+      user: ftpConfig.username,
+      password: ftpConfig.password,
+    });
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const basePath = ftpConfig.basePath || '/images';
+    const remotePath = `${basePath}/${filename}`;
+
+    // Convert buffer to Readable stream for FTP upload
+    const { Readable } = require('stream');
+    const readableStream = Readable.from(buffer);
+    
+    await client.uploadFrom(readableStream, remotePath);
+
+    const baseUrl = ftpConfig.baseUrl || '';
+    if (!baseUrl) {
+      console.warn('FTP baseUrl not configured, file uploaded but URL unavailable');
+      return null;
+    }
+
+    return `${baseUrl}/${filename}`;
+  } catch (error) {
+    console.error('FTP upload error:', error);
+    return null;
+  } finally {
+    if (client) {
+      client.close();
+    }
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,19 +69,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
-      );
-    }
-
-    // Check if running on Vercel - more reliable detection
-    const isVercel = !!process.env.VERCEL_URL || process.env.VERCEL === 'true';
-    
-    if (isVercel) {
-      return NextResponse.json(
-        { 
-          error: 'File uploads are not supported on Vercel due to ephemeral filesystem. Configure cloud storage (AWS S3, Cloudinary, Supabase) instead.',
-          helpUrl: 'https://vercel.com/docs/storage/overview'
-        },
-        { status: 501 }
       );
     }
 
@@ -47,7 +92,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 10MB on production, 50MB on development)
+    // Check if running on Vercel
+    const isVercel = !!process.env.VERCEL_URL || process.env.VERCEL === 'true';
+    
+    // Validate file size based on environment
     const maxSize = isVercel ? 5 * 1024 * 1024 : 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -56,27 +104,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
+    // Generate unique filename
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const filename = `${type}-${timestamp}.${ext}`;
+
+    // Try FTP upload first if configured
+    const ftpConfig = await getFtpConfig();
+    if (ftpConfig?.enabled && ftpConfig?.host && ftpConfig?.username && ftpConfig?.password) {
+      const ftpUrl = await uploadToFtp(file, filename, ftpConfig);
+      if (ftpUrl) {
+        return NextResponse.json(
+          { url: ftpUrl, filename, uploadedTo: 'ftp' },
+          { status: 200 }
+        );
+      }
+      // If FTP fails and we're on Vercel, return error
+      if (isVercel) {
+        return NextResponse.json(
+          { 
+            error: 'FTP upload failed and local storage not available on Vercel',
+            helpUrl: 'https://vercel.com/docs/storage/overview'
+          },
+          { status: 501 }
+        );
+      }
+      // Otherwise fall through to local storage
+      console.warn('FTP upload failed, falling back to local storage');
+    }
+
+    // If on Vercel and no FTP configured, return error
+    if (isVercel) {
+      return NextResponse.json(
+        { 
+          error: 'No FTP configured. Configure FTP server in Admin Dashboard > Settings > FTP Server, or use cloud storage.',
+          helpUrl: 'https://vercel.com/docs/storage/overview'
+        },
+        { status: 501 }
+      );
+    }
+
+    // Fallback to local storage (development/localhost)
     const uploadsDir = join(process.cwd(), 'public', 'uploads');
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const filename = `${type}-${timestamp}.${ext}`;
     const filepath = join(uploadsDir, filename);
-
-    // Write file
     const bytes = await file.arrayBuffer();
     await writeFile(filepath, Buffer.from(bytes));
 
-    // Return public URL
     const url = `/uploads/${filename}`;
-
     return NextResponse.json(
-      { url, filename },
+      { url, filename, uploadedTo: 'local' },
       { status: 200 }
     );
   } catch (error: any) {
