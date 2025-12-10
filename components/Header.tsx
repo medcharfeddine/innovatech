@@ -111,21 +111,16 @@ const Header = () => {
               {branding.logoUrl ? (
                 <img 
                   src={branding.logoUrl} 
-                  alt={branding.logoUrl}
+                  alt="Logo"
                   className={styles.logoImage}
                   loading="lazy"
                   onError={(e) => {
                     console.error('Logo failed to load:', branding.logoUrl);
                     e.currentTarget.style.display = 'none';
-                    // Show fallback text
-                    const fallback = document.createElement('span');
-                    fallback.className = styles.brand;
-                    fallback.textContent = branding.logoUrl;
-                    e.currentTarget.parentElement?.appendChild(fallback);
                   }}
                 />
               ) : (
-                <span className={styles.brand}>{branding.logoUrl}</span>
+                <span className={styles.brand}>Nova</span>
               )}
             </Link>
           </div>
