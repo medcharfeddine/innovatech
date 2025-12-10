@@ -112,12 +112,36 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { host, port, username, password, basePath, baseUrl, test } = body;
+    let { host, port, username, password, basePath, baseUrl, test } = body;
 
-    // Validate required fields
-    if (!host || !port || !username || !password) {
+    // Get current config to preserve password if masked
+    const currentConfig = await getFtpConfig();
+
+    // If password is masked, fetch the actual password from the saved config
+    if (password === '••••••••' || !password || password.includes('•')) {
+      password = currentConfig.password;
+      
+      // If still no password, only allow saving metadata (no test)
+      if (!password && test) {
+        return NextResponse.json(
+          { error: 'Password required for connection test. Please enter the FTP password.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate required fields for connection (only if testing)
+    if (test && (!host || !port || !username || !password)) {
       return NextResponse.json(
-        { error: 'Missing required FTP credentials' },
+        { error: 'Missing required FTP credentials for connection test' },
+        { status: 400 }
+      );
+    }
+
+    // Validate at least host and username are provided
+    if (!host || !username) {
+      return NextResponse.json(
+        { error: 'Host and username are required' },
         { status: 400 }
       );
     }
@@ -125,16 +149,16 @@ export async function PUT(request: NextRequest) {
     const newConfig = {
       enabled: true,
       host: host.trim(),
-      port: parseInt(port, 10),
+      port: port ? parseInt(port, 10) : 21,
       username: username.trim(),
-      password: password.trim(),
+      password: password ? password.trim() : '',
       basePath: (basePath || '/images').trim(),
       baseUrl: (baseUrl || '').trim(),
-      createdAt: new Date().toISOString(),
+      createdAt: currentConfig.createdAt || new Date().toISOString(),
     };
 
     // Test connection if requested
-    if (test) {
+    if (test && password) {
       const testResult = await testFtpConnection(newConfig);
       if (!testResult.success) {
         return NextResponse.json(

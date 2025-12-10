@@ -11,7 +11,9 @@ import FTPSettings from '@/components/FTPSettings';
 export default function AdminPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [token, setToken] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -77,13 +79,18 @@ export default function AdminPage() {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
+  // Hydration safety
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const userData = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
+        const authToken = localStorage.getItem('token');
 
-        if (!userData || !token) {
+        if (!userData || !authToken) {
           router.push('/login');
           return;
         }
@@ -96,11 +103,12 @@ export default function AdminPage() {
         }
 
         setUser(parsedUser);
+        setToken(authToken);
 
         // Fetch admin stats
         const response = await fetch('/api/admin/stats', {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${authToken}`,
           },
         });
 
@@ -468,6 +476,7 @@ export default function AdminPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'logo');
+      formData.append('folder', 'branding');
 
       const token = localStorage.getItem('token');
       const response = await fetch('/api/upload', {
@@ -552,6 +561,7 @@ export default function AdminPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'favicon');
+      formData.append('folder', 'branding');
 
       const token = localStorage.getItem('token');
       const response = await fetch('/api/upload', {
@@ -668,6 +678,7 @@ export default function AdminPage() {
         const formData = new FormData();
         formData.append('file', bannerImageFile);
         formData.append('type', 'banner');
+        formData.append('folder', 'banners');
 
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
@@ -1004,6 +1015,7 @@ export default function AdminPage() {
         const formData = new FormData();
         formData.append('file', productImageFile);
         formData.append('type', 'product');
+        formData.append('folder', 'products');
 
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
@@ -1028,6 +1040,7 @@ export default function AdminPage() {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('type', 'product');
+          formData.append('folder', 'products');
 
           const uploadRes = await fetch('/api/upload', {
             method: 'POST',
@@ -1147,6 +1160,7 @@ export default function AdminPage() {
         const formData = new FormData();
         formData.append('file', categoryImageFile);
         formData.append('type', 'category');
+        formData.append('folder', 'categories');
 
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
@@ -1233,7 +1247,7 @@ export default function AdminPage() {
     }
   };
 
-  if (loading) {
+  if (!hydrated || loading) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}>Loading admin dashboard...</div>
@@ -1844,7 +1858,7 @@ export default function AdminPage() {
                 Connect your e-commerce store to an FTP server to manage and serve all product images, 
                 category images, and branding assets from a centralized location.
               </p>
-              {user && <FTPSettings token={localStorage.getItem('token') || ''} />}
+              {user && token && <FTPSettings token={token} />}
             </div>
           </div>
         )}

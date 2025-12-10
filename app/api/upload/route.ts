@@ -22,7 +22,7 @@ async function getFtpConfig() {
   return null;
 }
 
-async function uploadToFtp(file: File, filename: string, ftpConfig: any): Promise<string | null> {
+async function uploadToFtp(file: File, filename: string, ftpConfig: any, folder?: string): Promise<string | null> {
   let client: Client | null = null;
   try {
     client = new Client();
@@ -36,7 +36,15 @@ async function uploadToFtp(file: File, filename: string, ftpConfig: any): Promis
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const basePath = ftpConfig.basePath || '/images';
-    const remotePath = `${basePath}/${filename}`;
+    const folderPath = folder ? `${basePath}/${folder}` : basePath;
+    const remotePath = `${folderPath}/${filename}`;
+
+    // Ensure directory exists (create if needed)
+    try {
+      await client.ensureDir(folderPath);
+    } catch (dirError) {
+      console.warn('Could not ensure directory, attempting upload anyway:', dirError);
+    }
 
     // Convert buffer to Readable stream for FTP upload
     const { Readable } = require('stream');
@@ -50,7 +58,8 @@ async function uploadToFtp(file: File, filename: string, ftpConfig: any): Promis
       return null;
     }
 
-    return `${baseUrl}/${filename}`;
+    const relativeUrl = folder ? `${folder}/${filename}` : filename;
+    return `${baseUrl}/${relativeUrl}`;
   } catch (error) {
     console.error('FTP upload error:', error);
     return null;
@@ -75,6 +84,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;
+    const folder = formData.get('folder') as string;
 
     if (!file) {
       return NextResponse.json(
@@ -112,10 +122,10 @@ export async function POST(request: NextRequest) {
     // Try FTP upload first if configured
     const ftpConfig = await getFtpConfig();
     if (ftpConfig?.enabled && ftpConfig?.host && ftpConfig?.username && ftpConfig?.password) {
-      const ftpUrl = await uploadToFtp(file, filename, ftpConfig);
+      const ftpUrl = await uploadToFtp(file, filename, ftpConfig, folder);
       if (ftpUrl) {
         return NextResponse.json(
-          { url: ftpUrl, filename, uploadedTo: 'ftp' },
+          { url: ftpUrl, filename, uploadedTo: 'ftp', folder },
           { status: 200 }
         );
       }
