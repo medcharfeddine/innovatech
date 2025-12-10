@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
-
-// NOTE: File uploads persist locally but not on serverless platforms like Vercel
-// For production, consider using cloud storage (AWS S3, Cloudinary, etc.)
-// Current implementation stores branding data in public/branding.json
+import { connectDB } from '@/lib/db/mongodb';
+import Branding from '@/lib/models/Branding';
 
 const BRANDING_FILE = join(process.cwd(), 'public', 'branding.json');
 
@@ -33,32 +31,56 @@ const DEFAULT_BRANDING = {
 
 async function getBrandingData() {
   try {
-    // Skip file operations on Vercel
-    if (process.env.VERCEL_URL || process.env.VERCEL) {
-      return DEFAULT_BRANDING;
+    // Try to get from MongoDB first (persistent)
+    await connectDB();
+    let branding = await Branding.findById('1');
+    
+    if (branding) {
+      return branding.toObject();
     }
 
-    if (existsSync(BRANDING_FILE)) {
-      const data = await readFile(BRANDING_FILE, 'utf-8');
-      return JSON.parse(data);
+    // Fallback: try to read from local file on localhost
+    if (!process.env.VERCEL_URL && !process.env.VERCEL) {
+      if (existsSync(BRANDING_FILE)) {
+        const data = await readFile(BRANDING_FILE, 'utf-8');
+        const fileData = JSON.parse(data);
+        
+        // Save to MongoDB if found in file
+        try {
+          branding = await Branding.findByIdAndUpdate('1', fileData, { upsert: true, new: true });
+          return branding.toObject();
+        } catch (err) {
+          console.warn('Could not save file data to MongoDB:', err);
+          return fileData;
+        }
+      }
     }
+
+    return DEFAULT_BRANDING;
   } catch (error) {
-    console.error('Error reading branding file:', error);
+    console.error('Error reading branding data:', error);
   }
   return DEFAULT_BRANDING;
 }
 
 async function saveBrandingData(data: any) {
   try {
-    // Skip file operations on Vercel
-    if (process.env.VERCEL_URL || process.env.VERCEL) {
-      console.warn('Branding data not persisted on Vercel (ephemeral filesystem)');
-      return;
-    }
+    await connectDB();
+    const branding = await Branding.findByIdAndUpdate('1', data, { upsert: true, new: true });
     
-    await writeFile(BRANDING_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    // Also save to file on localhost for reference
+    if (!process.env.VERCEL_URL && !process.env.VERCEL) {
+      try {
+        await writeFile(BRANDING_FILE, JSON.stringify(branding.toObject(), null, 2), 'utf-8');
+      } catch (err) {
+        console.warn('Could not save to file:', err);
+      }
+    }
+
+    return branding.toObject();
   } catch (error) {
-    console.error('Error saving branding file:', error);
+    console.error('Error saving branding data:', error);
+    throw error;
   }
 }
 
