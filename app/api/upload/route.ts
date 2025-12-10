@@ -8,10 +8,23 @@ const FTP_CONFIG_FILE = join(process.cwd(), 'public', 'ftp-config.json');
 
 async function getFtpConfig() {
   try {
+    // On Vercel, read from environment variables
     if (process.env.VERCEL_URL || process.env.VERCEL) {
+      if (process.env.FTP_HOST && process.env.FTP_USERNAME && process.env.FTP_PASSWORD) {
+        return {
+          enabled: true,
+          host: process.env.FTP_HOST,
+          port: parseInt(process.env.FTP_PORT || '21', 10),
+          username: process.env.FTP_USERNAME,
+          password: process.env.FTP_PASSWORD,
+          basePath: process.env.FTP_BASE_PATH || '/images',
+          baseUrl: process.env.FTP_BASE_URL || '',
+        };
+      }
       return null;
     }
 
+    // On localhost, read from file
     if (existsSync(FTP_CONFIG_FILE)) {
       const data = await readFile(FTP_CONFIG_FILE, 'utf-8');
       return JSON.parse(data);

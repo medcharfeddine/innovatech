@@ -21,11 +21,24 @@ const DEFAULT_FTP_CONFIG = {
 
 async function getFtpConfig() {
   try {
-    // Skip file reading on Vercel
+    // On Vercel, read from environment variables
     if (process.env.VERCEL_URL || process.env.VERCEL) {
+      if (process.env.FTP_HOST && process.env.FTP_USERNAME && process.env.FTP_PASSWORD) {
+        return {
+          enabled: true,
+          host: process.env.FTP_HOST,
+          port: parseInt(process.env.FTP_PORT || '21', 10),
+          username: process.env.FTP_USERNAME,
+          password: process.env.FTP_PASSWORD,
+          basePath: process.env.FTP_BASE_PATH || '/images',
+          baseUrl: process.env.FTP_BASE_URL || '',
+          createdAt: new Date().toISOString(),
+        };
+      }
       return DEFAULT_FTP_CONFIG;
     }
 
+    // On localhost, read from file
     if (existsSync(FTP_CONFIG_FILE)) {
       const data = await readFile(FTP_CONFIG_FILE, 'utf-8');
       return JSON.parse(data);
