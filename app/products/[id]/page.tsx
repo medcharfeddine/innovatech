@@ -166,11 +166,11 @@ export default function ProductDetailPage() {
                   loading="lazy"
                   decoding="async"
                 />
-                {hasDiscount && (
+                {hasDiscount ? (
                   <div className={styles.discountBadge}>
                     -{product.discount}%
                   </div>
-                )}
+                ) : null}
               </>
             )}
           </div>
@@ -227,14 +227,14 @@ export default function ProductDetailPage() {
             </Link>
           </div>
 
-          {/* Rating */}
-          {product.rating && (
+          {/* Rating - Only render if product has a rating */}
+          {product.rating ? (
             <div className={styles.ratingSection}>
               <span className={styles.stars}>⭐ {product.rating.toFixed(1)}</span>
               <span className={styles.reviewCount}>({product.reviews?.length || 0} reviews)</span>
               <button className={styles.rateBtn}>Rate this product</button>
             </div>
-          )}
+          ) : null}
 
           {/* Price & Availability */}
           <div className={styles.priceAvailability}>
@@ -356,11 +356,11 @@ export default function ProductDetailPage() {
           <div className={styles.specItem}>
             <strong>Stock:</strong> {product.stock} units
           </div>
-          {product.discount && (
+          {product.discount && product.discount > 0 ? (
             <div className={styles.specItem}>
               <strong>Discount:</strong> {product.discount}% off
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
