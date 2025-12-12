@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './admin.module.css';
@@ -126,45 +126,78 @@ export default function AdminPage() {
     checkAuth();
   }, [router]);
 
-  // Fetch categories on mount for product modal
+  // Load all data once on mount
   useEffect(() => {
-    const fetchCategoriesForModal = async () => {
+    const loadInitialData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/categories/all', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(Array.isArray(data) ? data : data.categories || []);
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        // Fetch categories
+        const categoriesRes = await fetch('/api/categories', { headers });
+        if (categoriesRes.ok) {
+          const data = await categoriesRes.json();
+          const processedData = Array.isArray(data) ? data : data.categories || [];
+          
+          // Flatten hierarchical data
+          const flatCategories: any[] = [];
+          processedData.forEach((parentCat: any) => {
+            flatCategories.push(parentCat);
+            if (parentCat.subcategories && Array.isArray(parentCat.subcategories)) {
+              parentCat.subcategories.forEach((childCat: any) => {
+                flatCategories.push({
+                  ...childCat,
+                  parent: parentCat._id
+                });
+              });
+            }
+          });
+          
+          setCategories(flatCategories);
+        }
+
+        // Fetch products
+        const productsRes = await fetch('/api/products', { headers });
+        if (productsRes.ok) {
+          const data = await productsRes.json();
+          setProducts(Array.isArray(data) ? data : data.products || []);
+        }
+
+        // Fetch orders
+        const ordersRes = await fetch('/api/orders', { headers });
+        if (ordersRes.ok) {
+          const data = await ordersRes.json();
+          setOrders(Array.isArray(data) ? data : data.orders || []);
+        }
+
+        // Fetch users
+        const usersRes = await fetch('/api/auth/users', { headers });
+        if (usersRes.ok) {
+          const data = await usersRes.json();
+          setUsers(Array.isArray(data) ? data : data.users || []);
+        }
+
+        // Fetch banners
+        const bannersRes = await fetch('/api/banners', { headers });
+        if (bannersRes.ok) {
+          const data = await bannersRes.json();
+          setBanners(Array.isArray(data) ? data : data.banners || []);
+        }
+
+        // Fetch branding
+        const brandingRes = await fetch('/api/branding', { headers });
+        if (brandingRes.ok) {
+          const data = await brandingRes.json();
+          setBranding(data);
         }
       } catch (error) {
-        console.error('Error fetching categories for modal:', error);
+        console.error('Error loading initial data:', error);
       }
     };
 
-    fetchCategoriesForModal();
+    loadInitialData();
   }, []);
-
-  // Auto-refresh polling for real-time sync (every 10 seconds)
-  useEffect(() => {
-    const pollInterval = setInterval(() => {
-      // Only refresh if admin is focused and data is loaded
-      if (activeTab === 'products' && products.length > 0) {
-        fetchTabData('products');
-      } else if (activeTab === 'categories' && categories.length > 0) {
-        fetchTabData('categories');
-      } else if (activeTab === 'orders' && orders.length > 0) {
-        fetchTabData('orders');
-      } else if (activeTab === 'users' && users.length > 0) {
-        fetchTabData('users');
-      } else if (activeTab === 'banners' && banners.length > 0) {
-        fetchTabData('banners');
-      }
-    }, 10000); // 10 second polling interval
-
-    return () => clearInterval(pollInterval);
-  }, [activeTab, products.length, categories.length, orders.length, users.length, banners.length]);
 
   const handleTabChange = (tabName: string) => {
     setActiveTab(tabName);
@@ -182,7 +215,7 @@ export default function AdminPage() {
   };
 
   // Fetch tab data
-  const fetchTabData = async (tab: string) => {
+  const fetchTabData = useCallback(async (tab: string) => {
     setTabLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -202,17 +235,29 @@ export default function AdminPage() {
           }
           break;
         case 'categories':
-          const categoriesRes = await fetch('/api/categories/all', { headers });
+          // Fetch all categories and flatten them
+          const categoriesRes = await fetch('/api/categories', { headers });
           if (categoriesRes.ok) {
             const data = await categoriesRes.json();
-            setCategories(Array.isArray(data) ? data : data.categories || []);
+            const processedData = Array.isArray(data) ? data : data.categories || [];
+            
+            // Flatten hierarchical data from API
+            const flatCategories: any[] = [];
+            processedData.forEach((parentCat: any) => {
+              flatCategories.push(parentCat);
+              if (parentCat.subcategories && Array.isArray(parentCat.subcategories)) {
+                parentCat.subcategories.forEach((childCat: any) => {
+                  flatCategories.push({
+                    ...childCat,
+                    parent: parentCat._id
+                  });
+                });
+              }
+            });
+            
+            setCategories(flatCategories);
           } else {
-            // Fallback to regular categories endpoint
-            const fallbackRes = await fetch('/api/categories', { headers });
-            if (fallbackRes.ok) {
-              const data = await fallbackRes.json();
-              setCategories(Array.isArray(data) ? data : data.categories || []);
-            }
+            setCategories([]);
           }
           break;
         case 'orders':
@@ -256,7 +301,7 @@ export default function AdminPage() {
     } finally {
       setTabLoading(false);
     }
-  };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -932,7 +977,12 @@ export default function AdminPage() {
   };
 
   // Category handlers
-  const handleOpenCategoryModal = () => {
+  const handleOpenCategoryModal = async () => {
+    // Ensure all categories are loaded
+    if (categories.length === 0) {
+      await fetchTabData('categories');
+    }
+    
     setCategoryForm({
       name: '',
       slug: '',
@@ -956,7 +1006,12 @@ export default function AdminPage() {
     setEditingCategoryId(null);
   };
 
-  const handleEditCategory = (category: any) => {
+  const handleEditCategory = async (category: any) => {
+    // Ensure all categories are loaded for parent selection
+    if (categories.length === 0) {
+      await fetchTabData('categories');
+    }
+    
     setCategoryForm({
       name: category.name,
       slug: category.slug || '',
@@ -1209,25 +1264,8 @@ export default function AdminPage() {
       if (response.ok) {
         const result = await response.json();
         
-        // Refetch categories to ensure consistency
-        try {
-          const token = localStorage.getItem('token');
-          const refreshRes = await fetch('/api/categories/all', {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          if (refreshRes.ok) {
-            const refreshedData = await refreshRes.json();
-            setCategories(Array.isArray(refreshedData) ? refreshedData : refreshedData.categories || []);
-          }
-        } catch (err) {
-          console.warn('Failed to refetch categories, using local update:', err);
-          // Fallback to local state update
-          if (editingCategoryId) {
-            setCategories(categories.map(c => c._id === editingCategoryId ? result : c));
-          } else {
-            setCategories([...categories, result]);
-          }
-        }
+        // Refetch categories to ensure consistency with flattened list
+        await fetchTabData('categories');
 
         // Reset form
         setCategoryForm({
@@ -1491,95 +1529,102 @@ export default function AdminPage() {
                 <p>Loading categories...</p>
               ) : categories.length > 0 ? (
                 <div className={styles.categoriesTree}>
-                  {categories.map((parentCategory: any) => (
-                    <div key={parentCategory._id} className={styles.parentCategorySection}>
-                      {/* Parent Category Card */}
-                      <div className={styles.parentCategoryCard}>
-                        <div className={styles.parentCategoryContent}>
-                          <div className={styles.categoryImage}>
-                            {parentCategory.image ? (
-                              <img src={parentCategory.image} alt={parentCategory.name} />
-                            ) : (
-                              <div className={styles.imagePlaceholder}>📁</div>
-                            )}
-                          </div>
-                          <div className={styles.categoryInfo}>
-                            <h3 className={styles.categoryTitle}>{parentCategory.name}</h3>
-                            {parentCategory.description && (
-                              <p className={styles.categoryDescription}>{parentCategory.description}</p>
-                            )}
-                            <div className={styles.categoryMeta}>
-                              <span className={styles.subcategoryCount}>
-                                {parentCategory.subcategories?.length || 0} subcategories
-                              </span>
+                  {categories
+                    .filter((cat: any) => !cat.parent) // Only show top-level categories
+                    .map((parentCategory: any) => {
+                      // Find children for this parent
+                      const children = categories.filter((cat: any) => cat.parent === parentCategory._id);
+                      
+                      return (
+                        <div key={parentCategory._id} className={styles.parentCategorySection}>
+                          {/* Parent Category Card */}
+                          <div className={styles.parentCategoryCard}>
+                            <div className={styles.parentCategoryContent}>
+                              <div className={styles.categoryImage}>
+                                {parentCategory.image ? (
+                                  <img src={parentCategory.image} alt={parentCategory.name} />
+                                ) : (
+                                  <div className={styles.imagePlaceholder}>📁</div>
+                                )}
+                              </div>
+                              <div className={styles.categoryInfo}>
+                                <h3 className={styles.categoryTitle}>{parentCategory.name}</h3>
+                                {parentCategory.description && (
+                                  <p className={styles.categoryDescription}>{parentCategory.description}</p>
+                                )}
+                                <div className={styles.categoryMeta}>
+                                  <span className={styles.subcategoryCount}>
+                                    {children.length} subcategories
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className={styles.parentCategoryActions}>
+                              <button 
+                                className={styles.editBtn} 
+                                onClick={() => handleEditCategory(parentCategory)}
+                                title="Edit parent category"
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button 
+                                className={styles.deleteBtn} 
+                                onClick={() => handleDeleteCategory(parentCategory._id, parentCategory.name)}
+                                title="Delete parent category"
+                              >
+                                🗑️ Delete
+                              </button>
                             </div>
                           </div>
-                        </div>
-                        <div className={styles.parentCategoryActions}>
-                          <button 
-                            className={styles.editBtn} 
-                            onClick={() => handleEditCategory(parentCategory)}
-                            title="Edit parent category"
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button 
-                            className={styles.deleteBtn} 
-                            onClick={() => handleDeleteCategory(parentCategory._id, parentCategory.name)}
-                            title="Delete parent category"
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
-                      </div>
 
-                      {/* Child Categories */}
-                      {parentCategory.subcategories && parentCategory.subcategories.length > 0 ? (
-                        <div className={styles.subcategoriesContainer}>
-                          {parentCategory.subcategories.map((child: any) => (
-                            <div key={child._id} className={styles.childCategoryCard}>
-                              <div className={styles.childCategoryContent}>
-                                <div className={styles.childIndicator}>↳</div>
-                                <div className={styles.categoryImage}>
-                                  {child.image ? (
-                                    <img src={child.image} alt={child.name} />
-                                  ) : (
-                                    <div className={styles.imagePlaceholder}>📂</div>
-                                  )}
+                          {/* Child Categories */}
+                          {children.length > 0 ? (
+                            <div className={styles.subcategoriesContainer}>
+                              {children.map((child: any) => (
+                                <div key={child._id} className={styles.childCategoryCard}>
+                                  <div className={styles.childCategoryContent}>
+                                    <div className={styles.childIndicator}>↳</div>
+                                    <div className={styles.categoryImage}>
+                                      {child.image ? (
+                                        <img src={child.image} alt={child.name} />
+                                      ) : (
+                                        <div className={styles.imagePlaceholder}>📂</div>
+                                      )}
+                                    </div>
+                                    <div className={styles.categoryInfo}>
+                                      <h4 className={styles.categoryTitle}>{child.name}</h4>
+                                      {child.description && (
+                                        <p className={styles.categoryDescription}>{child.description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className={styles.childCategoryActions}>
+                                    <button 
+                                      className={styles.editBtn} 
+                                      onClick={() => handleEditCategory(child)}
+                                      title="Edit subcategory"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button 
+                                      className={styles.deleteBtn} 
+                                      onClick={() => handleDeleteCategory(child._id, child.name)}
+                                      title="Delete subcategory"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className={styles.categoryInfo}>
-                                  <h4 className={styles.categoryTitle}>{child.name}</h4>
-                                  {child.description && (
-                                    <p className={styles.categoryDescription}>{child.description}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className={styles.childCategoryActions}>
-                                <button 
-                                  className={styles.editBtn} 
-                                  onClick={() => handleEditCategory(child)}
-                                  title="Edit subcategory"
-                                >
-                                  ✏️
-                                </button>
-                                <button 
-                                  className={styles.deleteBtn} 
-                                  onClick={() => handleDeleteCategory(child._id, child.name)}
-                                  title="Delete subcategory"
-                                >
-                                  🗑️
-                                </button>
-                              </div>
+                              ))}
                             </div>
-                          ))}
+                          ) : (
+                            <div className={styles.emptySubcategories}>
+                              No subcategories yet. <button onClick={handleOpenCategoryModal} className={styles.addSubcategoryBtn}>Add one</button>
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className={styles.emptySubcategories}>
-                          No subcategories yet. <button onClick={handleOpenCategoryModal} className={styles.addSubcategoryBtn}>Add one</button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                      );
+                    })}
                 </div>
               ) : (
                 <p className={styles.emptyState}>No categories found</p>
@@ -2176,13 +2221,17 @@ export default function AdminPage() {
                   onChange={(e) => setCategoryForm({ ...categoryForm, parent: e.target.value })}
                 >
                   <option value="">None (Top-level category)</option>
-                  {categories
-                    .filter((c: any) => c._id !== editingCategoryId)
-                    .map((c: any) => (
-                      <option key={c._id} value={c._id}>
-                        {c.parent ? `${c.parent.name} > ${c.name}` : c.name}
-                      </option>
-                    ))}
+                  {categories && categories.length > 0 ? (
+                    categories
+                      .filter((c: any) => c._id !== editingCategoryId)
+                      .map((c: any) => (
+                        <option key={c._id} value={c._id}>
+                          {c.name}
+                        </option>
+                      ))
+                  ) : (
+                    <option disabled>Loading categories...</option>
+                  )}
                 </select>
               </div>
 
