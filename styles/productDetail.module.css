@@ -483,6 +483,17 @@
   background: #fff5f5;
 }
 
+.secondaryBtn.active {
+  border-color: #df172e;
+  background: #df172e;
+  color: white;
+}
+
+.secondaryBtn.active:hover {
+  background: #c71222;
+  border-color: #c71222;
+}
+
 .trustBadges {
   display: flex;
   flex-direction: column;

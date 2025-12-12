@@ -4,6 +4,8 @@ export interface IBranding {
   _id: string;
   siteName: string;
   storeName: string;
+  pageTitle: string;
+  pageDescription: string;
   logoUrl: string;
   faviconUrl: string;
   primaryColor: string;
@@ -17,7 +19,6 @@ export interface IBranding {
     instagram: string;
     twitter: string;
   };
-  pageTitle: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,8 @@ const BrandingSchema = new Schema<IBranding>(
     _id: { type: String, default: '1' },
     siteName: { type: String, default: 'Nova' },
     storeName: { type: String, default: 'Nova Store' },
+    pageTitle: { type: String, default: 'Nova - E-commerce Platform' },
+    pageDescription: { type: String, default: 'Premium e-commerce platform for shopping' },
     logoUrl: { type: String, default: '' },
     faviconUrl: { type: String, default: '' },
     primaryColor: { type: String, default: '#2a317f' },
@@ -40,7 +43,6 @@ const BrandingSchema = new Schema<IBranding>(
       instagram: { type: String, default: 'https://instagram.com' },
       twitter: { type: String, default: 'https://twitter.com' },
     },
-    pageTitle: { type: String, default: 'Nova - E-commerce Platform' },
   },
   { timestamps: true }
 );

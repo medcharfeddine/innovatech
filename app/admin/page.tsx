@@ -211,11 +211,6 @@ export default function AdminPage() {
             const fallbackRes = await fetch('/api/categories', { headers });
             if (fallbackRes.ok) {
               const data = await fallbackRes.json();
-              console.log('Categories fetched from fallback:', {
-                isArray: Array.isArray(data),
-                count: Array.isArray(data) ? data.length : 0,
-                data: data,
-              });
               setCategories(Array.isArray(data) ? data : data.categories || []);
             }
           }
@@ -281,8 +276,6 @@ export default function AdminPage() {
 
       if (response.ok) {
         const fullOrder = await response.json();
-        console.log('Full order details:', fullOrder);
-        console.log('Customer info:', fullOrder.customerInfo);
         setSelectedOrder(fullOrder);
         setOrderModalOpen(true);
       } else {
@@ -353,10 +346,6 @@ export default function AdminPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Orders refetched:', {
-          count: Array.isArray(data) ? data.length : 0,
-          orders: data,
-        });
         const ordersList = Array.isArray(data) ? data : data.orders || [];
         setOrders(ordersList);
       } else {
@@ -387,7 +376,6 @@ export default function AdminPage() {
         const updatedOrder = await response.json();
         setSelectedOrder(updatedOrder);
         await refetchOrders();
-        console.log('Order status updated to:', newStatus);
       } else {
         alert('Failed to update order status');
       }
@@ -489,7 +477,6 @@ export default function AdminPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Upload response:', data); // Debug
         
         // Update branding with new logo URL
         const updatedBranding = { ...branding, logoUrl: data.url };
@@ -508,7 +495,6 @@ export default function AdminPage() {
 
           if (saveResponse.ok) {
             const savedData = await saveResponse.json();
-            console.log('Branding saved:', savedData); // Debug
             setBranding(savedData);
             alert('Logo uploaded and saved successfully!');
           } else {
@@ -646,6 +632,17 @@ export default function AdminPage() {
         const data = await response.json();
         setBranding(data);
         alert('Branding settings saved successfully!');
+        
+        // Refresh the data from the server to ensure it's persisted
+        setTimeout(async () => {
+          const refreshRes = await fetch('/api/branding', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (refreshRes.ok) {
+            const refreshedData = await refreshRes.json();
+            setBranding(refreshedData);
+          }
+        }, 1000);
       } else {
         const error = await response.json();
         alert(`Failed to save branding: ${error.error}`);
@@ -657,7 +654,19 @@ export default function AdminPage() {
   };
 
   const handleBrandingInputChange = (field: string, value: string) => {
-    setBranding({ ...branding, [field]: value });
+    if (field.includes('.')) {
+      // Handle nested properties like 'socialLinks.facebook'
+      const [parent, child] = field.split('.');
+      setBranding({
+        ...branding,
+        [parent]: {
+          ...branding[parent as keyof typeof branding],
+          [child]: value,
+        },
+      });
+    } else {
+      setBranding({ ...branding, [field]: value });
+    }
   };
 
   const handleBannerUpload = async (e: React.FormEvent) => {
@@ -1074,8 +1083,6 @@ export default function AdminPage() {
         images: additionalImages.length > 0 ? additionalImages : currentProductImages,
       };
 
-      console.log('Sending product data:', productData);
-
       const method = editingProductId ? 'PUT' : 'POST';
       const url = editingProductId ? `/api/products/${editingProductId}` : '/api/products';
 
@@ -1090,7 +1097,6 @@ export default function AdminPage() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Product saved successfully:', result);
         
         // Refetch products to ensure frontend stays in sync
         try {
@@ -1780,6 +1786,77 @@ export default function AdminPage() {
                       onChange={(e) => handleBrandingInputChange('accentColor', e.target.value)}
                     />
                   </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Store Description</label>
+                    <textarea 
+                      value={branding.description || 'Premium E-commerce Store'}
+                      onChange={(e) => handleBrandingInputChange('description', e.target.value)}
+                      placeholder="Enter store description"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Contact Email</label>
+                    <input 
+                      type="email" 
+                      value={branding.contactEmail || 'info@nova.com'}
+                      onChange={(e) => handleBrandingInputChange('contactEmail', e.target.value)}
+                      placeholder="Enter contact email"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Contact Phone</label>
+                    <input 
+                      type="tel" 
+                      value={branding.contactPhone || '+216 56 664 442'}
+                      onChange={(e) => handleBrandingInputChange('contactPhone', e.target.value)}
+                      placeholder="Enter contact phone"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Store Address</label>
+                    <input 
+                      type="text" 
+                      value={branding.address || 'Tunisia'}
+                      onChange={(e) => handleBrandingInputChange('address', e.target.value)}
+                      placeholder="Enter store address"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Facebook URL</label>
+                    <input 
+                      type="url" 
+                      value={branding.socialLinks?.facebook || 'https://facebook.com'}
+                      onChange={(e) => handleBrandingInputChange('socialLinks.facebook', e.target.value)}
+                      placeholder="Enter Facebook URL"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Instagram URL</label>
+                    <input 
+                      type="url" 
+                      value={branding.socialLinks?.instagram || 'https://instagram.com'}
+                      onChange={(e) => handleBrandingInputChange('socialLinks.instagram', e.target.value)}
+                      placeholder="Enter Instagram URL"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Twitter/X URL</label>
+                    <input 
+                      type="url" 
+                      value={branding.socialLinks?.twitter || 'https://twitter.com'}
+                      onChange={(e) => handleBrandingInputChange('socialLinks.twitter', e.target.value)}
+                      placeholder="Enter Twitter/X URL"
+                    />
+                  </div>
+
                   <div className={styles.formGroup}>
                     <label>Logo Upload</label>
                     <div className={styles.fileInputWrapper}>

@@ -8,19 +8,22 @@ import { CartProvider } from "@/lib/context/CartContext";
 import { ToastProvider } from "@/lib/context/ToastContext";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { FeaturedProvider } from "@/lib/context/FeaturedContext";
+import { WishlistProvider } from "@/lib/context/WishlistContext";
 
 export default function ClientProviders({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <CartProvider>
-        <ToastProvider>
-          <FeaturedProvider>
-            <Header />
-            <main>{children}</main>
-            <Footer />
-            <Toasts />
-          </FeaturedProvider>
-        </ToastProvider>
+        <WishlistProvider>
+          <ToastProvider>
+            <FeaturedProvider>
+              <Header />
+              <main>{children}</main>
+              <Footer />
+              <Toasts />
+            </FeaturedProvider>
+          </ToastProvider>
+        </WishlistProvider>
       </CartProvider>
     </AuthProvider>
   );

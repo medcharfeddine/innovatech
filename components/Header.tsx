@@ -7,7 +7,7 @@ import styles from './Header.module.css';
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
-  const [branding, setBranding] = useState({  logoUrl: '', faviconUrl: '' });
+  const [branding, setBranding] = useState({  logoUrl: '', faviconUrl: '', contactPhone: '+216 56 664 442' });
   const [user, setUser] = useState<any>(null);
 
   // Load user from localStorage
@@ -89,7 +89,7 @@ const Header = () => {
       {/* Top Bar */}
       <div className={styles.topBar}>
         <div className={styles.topBarLeft}>
-          <span>📞 (+216) 56 664 442</span>
+          <span>📞 {branding.contactPhone || '(+216) 56 664 442'}</span>
           <span>🕒 Mon-Sun: 08:30 - 16:00</span>
         </div>
         <div className={styles.topBarRight}>

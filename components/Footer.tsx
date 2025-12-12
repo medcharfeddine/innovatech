@@ -5,7 +5,12 @@ import styles from './Footer.module.css';
 import { useState, useEffect } from 'react';
 
 export default function Footer() {
-  const [branding, setBranding] = useState<any>({ logoUrl: '', siteName: 'Nova' });
+  const [branding, setBranding] = useState<any>({ 
+    logoUrl: '', 
+    siteName: 'Nova',
+    contactEmail: 'info@nova.com',
+    contactPhone: '+216 56 664 442'
+  });
 
   useEffect(() => {
     const fetchBranding = async () => {
@@ -53,8 +58,8 @@ export default function Footer() {
             <ul className={styles.links}>
               <li><Link href="/register">Create Account</Link></li>
               <li><Link href="/dashboard">My Dashboard</Link></li>
-              <li><a href="mailto:support@nova.com">Email Support</a></li>
-              <li><a href="tel:+1234567890">Call Us</a></li>
+              <li><a href={`mailto:${branding.contactEmail || 'info@nova.com'}`}>Email Support</a></li>
+              <li><a href={`tel:${branding.contactPhone || '+216 56 664 442'}`}>Call Us</a></li>
             </ul>
           </div>
 

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCart } from '@/lib/context/CartContext';
 import { useToast } from '@/lib/context/ToastContext';
+import { useWishlist } from '@/lib/context/WishlistContext';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import styles from '@/styles/productDetail.module.css';
@@ -31,14 +32,19 @@ export default function ProductDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { addToCart } = useCart();
   const { push } = useToast();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const [isInWish, setIsInWish] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`/api/products/${productId}`);
+        const response = await fetch(`/api/products/${productId}`, {
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        });
         if (response.ok) {
           const data = await response.json();
           setProduct(data);
+          setIsInWish(isInWishlist(data._id));
         }
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -51,9 +57,26 @@ export default function ProductDetailPage() {
     if (productId) {
       fetchProduct();
     }
-  }, [productId, push]);
+  }, [productId, push, isInWishlist]);
 
-  const handleAddToCart = () => {
+  // Memoized calculations
+  const isOutOfStock = useMemo(() => product?.stock === 0, [product?.stock]);
+  const hasDiscount = useMemo(() => product?.discount && product.discount > 0, [product?.discount]);
+  const discountedPrice = useMemo(
+    () => hasDiscount ? product!.price * (1 - (product!.discount || 0) / 100) : product?.price,
+    [hasDiscount, product?.price, product?.discount]
+  );
+  
+  const allImages = useMemo(() => [
+    product?.imageUrl || product?.image,
+    ...(product?.images || [])
+  ].filter(Boolean) as string[], [product?.imageUrl, product?.image, product?.images]);
+  
+  const currentImage = useMemo(() => allImages[currentImageIndex] || product?.imageUrl || product?.image, [allImages, currentImageIndex, product?.imageUrl, product?.image]);
+  const totalImages = useMemo(() => allImages.length, [allImages]);
+
+  // Memoized callbacks
+  const handleAddToCart = useCallback(() => {
     if (!product) return;
 
     addToCart({
@@ -66,7 +89,46 @@ export default function ProductDetailPage() {
 
     push(`${product.name} added to cart!`, { type: 'success' });
     setQuantity(1);
-  };
+  }, [product, quantity, addToCart, push]);
+
+  const handleToggleWishlist = useCallback(async () => {
+    if (!product) return;
+
+    try {
+      if (isInWish) {
+        await removeFromWishlist(product._id);
+        setIsInWish(false);
+        push(`${product.name} removed from wishlist`, { type: 'info' });
+      } else {
+        await addToWishlist({
+          productId: product._id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl || product.image,
+        });
+        setIsInWish(true);
+        push(`${product.name} added to wishlist!`, { type: 'success' });
+      }
+    } catch (error) {
+      push('Error updating wishlist. Please try again.', { type: 'error' });
+    }
+  }, [product, isInWish, addToWishlist, removeFromWishlist, push]);
+
+  const handlePreviousImage = useCallback(() => {
+    setCurrentImageIndex(prev => Math.max(0, prev - 1));
+  }, []);
+
+  const handleNextImage = useCallback(() => {
+    setCurrentImageIndex(prev => Math.min(totalImages - 1, prev + 1));
+  }, [totalImages]);
+
+  const handleSelectImage = useCallback((idx: number) => {
+    setCurrentImageIndex(idx);
+  }, []);
+
+  const handleQuantityChange = useCallback((value: number) => {
+    setQuantity(Math.max(1, Math.min(product?.stock || 0, value)));
+  }, [product?.stock]);
 
   if (loading) {
     return <div className={styles.loading}>Loading product...</div>;
@@ -80,19 +142,6 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
-  const isOutOfStock = product.stock === 0;
-  const hasDiscount = product.discount && product.discount > 0;
-  const discountedPrice = hasDiscount ? product.price * (1 - (product.discount || 0) / 100) : product.price;
-  
-  // Combine all images: primary image first, then additional images
-  const allImages = [
-    product.imageUrl || product.image,
-    ...(product.images || [])
-  ].filter(Boolean) as string[];
-  
-  const currentImage = allImages[currentImageIndex] || product.imageUrl || product.image;
-  const totalImages = allImages.length;
 
   return (
     <div className={styles.productDetailPage}>
@@ -114,6 +163,8 @@ export default function ProductDetailPage() {
                   src={currentImage}
                   alt={`${product.name} - Image ${currentImageIndex + 1}`}
                   className={styles.mainImage}
+                  loading="lazy"
+                  decoding="async"
                 />
                 {hasDiscount && (
                   <div className={styles.discountBadge}>
@@ -129,16 +180,18 @@ export default function ProductDetailPage() {
               <div className={styles.imageNav}>
                 <button 
                   className={styles.navButton}
-                  onClick={() => setCurrentImageIndex(Math.max(0, currentImageIndex - 1))}
+                  onClick={handlePreviousImage}
                   disabled={currentImageIndex === 0}
+                  aria-label="Previous image"
                 >
                   ← Previous
                 </button>
                 <span className={styles.imageCount}>{currentImageIndex + 1} / {totalImages}</span>
                 <button 
                   className={styles.navButton}
-                  onClick={() => setCurrentImageIndex(Math.min(totalImages - 1, currentImageIndex + 1))}
+                  onClick={handleNextImage}
                   disabled={currentImageIndex === totalImages - 1}
+                  aria-label="Next image"
                 >
                   Next →
                 </button>
@@ -150,10 +203,12 @@ export default function ProductDetailPage() {
                     <button
                       key={idx}
                       className={`${styles.thumbnail} ${idx === currentImageIndex ? styles.active : ''}`}
-                      onClick={() => setCurrentImageIndex(idx)}
+                      onClick={() => handleSelectImage(idx)}
                       title={`Image ${idx + 1}`}
+                      aria-label={`Select image ${idx + 1}`}
+                      aria-current={idx === currentImageIndex}
                     >
-                      <img src={img} alt={`Thumbnail ${idx + 1}`} />
+                      <img src={img} alt={`Thumbnail ${idx + 1}`} loading="lazy" />
                     </button>
                   ))}
                 </div>
@@ -187,7 +242,7 @@ export default function ProductDetailPage() {
               {hasDiscount ? (
                 <>
                   <span className={styles.originalPrice}>د.ت {product.price.toFixed(2)}</span>
-                  <span className={styles.currentPrice}>د.ت {discountedPrice.toFixed(2)}</span>
+                  <span className={styles.currentPrice}>د.ت {discountedPrice?.toFixed(2)}</span>
                 </>
               ) : (
                 <span className={styles.currentPrice}>د.ت {product.price.toFixed(2)}</span>
@@ -220,28 +275,32 @@ export default function ProductDetailPage() {
           {/* Quantity & Actions */}
           <div className={styles.actionsSection}>
             <div className={styles.quantityControl}>
-              <label>Quantity:</label>
+              <label htmlFor="quantity">Quantity:</label>
               <div className={styles.quantityInput}>
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={isOutOfStock}
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                  disabled={isOutOfStock || quantity === 1}
                   className={styles.quantityBtn}
+                  aria-label="Decrease quantity"
                 >
                   −
                 </button>
                 <input
+                  id="quantity"
                   type="number"
                   min="1"
                   max={product.stock}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                   disabled={isOutOfStock}
                   className={styles.quantityValue}
+                  aria-label="Product quantity"
                 />
                 <button
-                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  disabled={isOutOfStock}
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  disabled={isOutOfStock || quantity === product.stock}
                   className={styles.quantityBtn}
+                  aria-label="Increase quantity"
                 >
                   +
                 </button>
@@ -252,6 +311,7 @@ export default function ProductDetailPage() {
               className={styles.addToCartBtn}
               onClick={handleAddToCart}
               disabled={isOutOfStock}
+              aria-label={isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
             >
               {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
             </button>
@@ -260,7 +320,14 @@ export default function ProductDetailPage() {
           {/* Secondary Actions */}
           <div className={styles.secondaryActions}>
             <button className={styles.secondaryBtn}>Request Quote</button>
-            <button className={styles.secondaryBtn}>Add to Wishlist</button>
+            <button 
+              className={`${styles.secondaryBtn} ${isInWish ? styles.active : ''}`}
+              onClick={handleToggleWishlist}
+              aria-label={isInWish ? 'Remove from wishlist' : 'Add to wishlist'}
+              title={isInWish ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
+              {isInWish ? '❤️ In Wishlist' : '🤍 Add to Wishlist'}
+            </button>
             <button className={styles.secondaryBtn}>Compare</button>
           </div>
 

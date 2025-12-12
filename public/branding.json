@@ -1,19 +1,23 @@
 {
-  "_id": "1",
-  "siteName": "Innovatech",
-  "storeName": "Nova Store",
-  "logoUrl": "https://techink.fwh.is/images/branding/logo-1764704649660.png",
-  "faviconUrl": "https://techink.fwh.is/images/branding/favicon-1765316780539.jpg",
-  "primaryColor": "#2a317f",
-  "accentColor": "#df172e",
-  "description": "Premium E-commerce Store",
-  "contactEmail": "info@nova.com",
-  "contactPhone": "+216 56 664 442",
-  "address": "Tunisia",
   "socialLinks": {
     "facebook": "https://facebook.com",
     "instagram": "https://instagram.com",
     "twitter": "https://twitter.com"
   },
-  "pageTitle": "Innovatech - E-commerce Platform"
+  "_id": "1",
+  "__v": 0,
+  "accentColor": "#df172e",
+  "address": "Tunisia",
+  "contactEmail": "info@nova.com",
+  "contactPhone": "+216 27 079 073",
+  "createdAt": "2025-12-10T20:37:31.427Z",
+  "description": "Premium E-commerce Store",
+  "faviconUrl": "https://techink.fwh.is/images/branding/favicon-1765316780539.jpg",
+  "logoUrl": "https://techink.fwh.is/branding/logo-1765400521889.png",
+  "pageTitle": "Innovatech - E-commerce Platform",
+  "primaryColor": "#2a317f",
+  "siteName": "Innovatech",
+  "storeName": "Nova Store",
+  "updatedAt": "2025-12-10T21:30:56.696Z",
+  "pageDescription": "Premium e-commerce platform for shopping"
 }
