@@ -1262,10 +1262,32 @@ export default function AdminPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        // Update categories list directly
+        const token = localStorage.getItem('token');
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        // Refetch categories to ensure consistency with flattened list
-        await fetchTabData('categories');
+        const refreshRes = await fetch('/api/categories', { headers });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          const processedData = Array.isArray(data) ? data : data.categories || [];
+          
+          // Flatten hierarchical data
+          const flatCategories: any[] = [];
+          processedData.forEach((parentCat: any) => {
+            flatCategories.push(parentCat);
+            if (parentCat.subcategories && Array.isArray(parentCat.subcategories)) {
+              parentCat.subcategories.forEach((childCat: any) => {
+                flatCategories.push({
+                  ...childCat,
+                  parent: parentCat._id
+                });
+              });
+            }
+          });
+          
+          setCategories(flatCategories);
+        }
 
         // Reset form
         setCategoryForm({
